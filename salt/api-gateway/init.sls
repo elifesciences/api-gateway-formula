@@ -173,5 +173,7 @@ add-consumer-{{ name }}:
 remove-consumer-{{ name }}:
     cmd.run:
         - name: curl -i -sS -X DELETE --url {{ app.admin }}/consumers/{{ name }}
+        - require:
+            - service: kong-service
 {% endfor %}
 
