@@ -121,6 +121,7 @@ add-plugin-{{ plugin }}-for-{{ endpoint }}:
         - name: |
             curl -i -sS -X POST \
                 --url {{ app.admin }}/apis/{{ endpoint }}/plugins/ \
+                --data 'name={{ plugin }}' \
                 {% for key, val in params.items() -%}
                 --data '{{ key }}={{ val }}' \
                 {% endfor -%}
