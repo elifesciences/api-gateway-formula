@@ -2,3 +2,5 @@
 *.pyc
 *.orig
 *.swp
+/salt/modules/
+/salt/top.sls

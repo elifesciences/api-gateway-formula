@@ -87,17 +87,9 @@ kong-service:
 
 {% for name, params in app.endpoints.items() %}
 add-api-endpoint-{{ name }}:
-    cmd.run:
-        # returns successfully on duplicate with a "409 (Conflict)"
-        # -sS = no progress bar, but don't hide errors
-        - name: |
-            curl -i -sS -X POST \
-                --url {{ app.admin }}/apis/ \
-                {% for key, val in params.items() -%}
-                --data '{{ key }}={{ val }}' \
-                {% endfor -%}
-                --data 'name={{ name }}'
-
+    kong.post_api:
+        - admin_api: {{ app.admin }}
+        - params: {{ params }}
         - require:
             - service: kong-service
 {% endfor %}
@@ -135,7 +127,7 @@ add-plugin-{{ plugin }}-for-{{ endpoint }}:
                 ; # <-- important
 
         - require:
-            - cmd: add-api-endpoint-{{ endpoint }}
+            - add-api-endpoint-{{ endpoint }}
         - require_in:
             - cmd: all-plugins-installed
             
