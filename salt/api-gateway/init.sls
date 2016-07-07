@@ -88,23 +88,13 @@ kong-service:
 {% for name, params in app.endpoints.items() %}
 add-api-endpoint-{{ name }}:
     kong.post_api:
+        - name: name
         - admin_api: {{ app.admin }}
         - params: {{ params }}
         - require:
             - service: kong-service
 {% endfor %}
         
-{% for name in app.absent_endpoints %}
-remove-api-endpoint-{{ name }}:
-    cmd.run:
-        - name: |
-            curl -i -sS -X DELETE \
-                --url {{ app.admin }}/apis/ \
-                --data 'name={{ name }}'
-
-        - require:
-            - service: kong-service
-{% endfor %}
 
 
 #
@@ -116,22 +106,16 @@ remove-api-endpoint-{{ name }}:
     {% for plugin, params in plugin_list.items() %}
 
 add-plugin-{{ plugin }}-for-{{ endpoint }}:
-    cmd.run:
-        # https://getkong.org/docs/0.8.x/admin-api/#add-plugin            
-        - name: |
-            curl -i -sS -X POST \
-                --url {{ app.admin }}/apis/{{ endpoint }}/plugins/ \
-                --data 'name={{ plugin }}' \
-                {% for key, val in params.items() -%}
-                --data '{{ key }}={{ val }}' \
-                {% endfor -%}
-                ; # <-- important
-
+    kong.post_plugin:
+        - name: {{ plugin }}
+        - api: {{ endpoint }}
+        - admin_api: {{ app.admin }}
+        - params: {{ params }}
         - require:
+            - service: kong-service
             - add-api-endpoint-{{ endpoint }}
         - require_in:
             - cmd: all-plugins-installed
-            
     {% endfor %}
 {% endfor %}
 
@@ -148,24 +132,36 @@ all-plugins-installed:
 
 {% for name, key in app.consumers.items() %}
 add-consumer-{{ name }}:
-    cmd.run:
-        - name: |
-            curl -i -sS -X POST \
-                --url {{ app.admin }}/consumers/ \
-                --data "username={{ name }}"
-
-            curl -i -sS -X POST \
-                --url {{ app.admin }}/consumers/{{ name }}/key-auth/ \
-                --data 'key={{ key }}'
-        
+    kong.post_consumer:
+        - name: {{ name }}
+        - admin_api: {{ app.admin }}
         - require:
             - cmd: all-plugins-installed
+
+add-consumer-{{ name }}-key:
+    kong.post_key:
+        - name: {{ name }}
+        - admin_api: {{ app.admin }}
+        - key: '{{ key }}'
+        - require:
+            - cmd: all-plugins-installed
+            - kong: add-consumer-{{ name }}
+{% endfor %}
+
+{% for name in app.absent_endpoints %}
+remove-api-endpoint-{{ name }}:
+    kong.delete_api:
+        - name: {{ name }}
+        - admin_api: {{ app.admin }}
+        - require:
+            - service: kong-service
 {% endfor %}
 
 {% for name in app.absent_consumers %}
 remove-consumer-{{ name }}:
-    cmd.run:
-        - name: curl -i -sS -X DELETE --url {{ app.admin }}/consumers/{{ name }}
+    kong.delete_consumer:
+        - name: {{ name }}
+        - admin_api: {{ app.admin }}
         - require:
             - service: kong-service
 {% endfor %}
