@@ -57,7 +57,7 @@ def _post(admin_api, path, body):
 def _patch(admin_api, path, body):
     url = admin_api + path
     logger.info("Request: PATCH %s\n%s\n" % (url, body))
-    response = requests.post(url, data=body)
+    response = requests.patch(url, data=body)
     _log_response(response)
     return response
 
