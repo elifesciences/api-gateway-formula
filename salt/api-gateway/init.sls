@@ -88,7 +88,7 @@ kong-service:
 {% for name, params in app.endpoints.items() %}
 add-api-endpoint-{{ name }}:
     kong.post_api:
-        - name: name
+        - name: {{ name }}
         - admin_api: {{ app.admin }}
         - params: {{ params }}
         - require:

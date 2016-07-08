@@ -7,48 +7,30 @@ def post_api(name, admin_api, params={}):
     body = dict(params)
     body['name'] = name
     response = _post(admin_api, "/apis/", body)
-    ret = _ret(response, name)
-    ret['changes'] = {name: {'old': '', 'new':'present'}}
-    ret['result'] = response.status_code in [201, 409]
-    return ret
+    return _ret_of_post(response, name)
 
 def delete_api(name, admin_api):
     response = _delete(admin_api, "/apis/" + name)
-    ret = _ret(response, name)
-    ret['result'] = response.status_code in [200, 404]
-    old = 'present' if response.status_code == 200 else 'absent'
-    ret['changes'] = {name: {'old': old, 'new':'absent'}}
-    return ret
+    return _ret_of_delete(response, name)
 
 def post_plugin(name, api, admin_api, params={}):
     body = dict(params)
     body['name'] = name
     response = _post(admin_api, "/apis/" + api + "/plugins/", body)
-    ret = _ret(response, name)
-    ret['changes'] = {name: {'old': '', 'new':'present'}}
-    ret['result'] = response.status_code in [201, 409]
-    return ret
+    return _ret_of_post(response, name)
 
 def post_consumer(name, admin_api):
-    response = _post(admin_api, "/apis/" + api + "/plugins/", {'username': name})
-    ret = _ret(response, name)
-    ret['changes'] = {name: {'old': '', 'new':'present'}}
-    ret['result'] = response.status_code in [201, 409]
-    return ret
+    response = _post(admin_api, "/consumers", {'username': name})
+    return _ret_of_post(response, name)
 
 def post_key(name, admin_api, key):
     response = _post(admin_api, "/consumers/" + name + "/key-auth/", {'key': key})
-    ret = _ret(response, name)
-    ret['changes'] = {name: {'old': '', 'new':'present'}}
-    ret['result'] = response.status_code in [201, 409]
-    return ret
+    return _ret_of_post(response, name)
 
 def delete_consumer(name, admin_api):
     response = _delete(admin_api, "/consumers/" + name)
-    ret = _ret(response, name)
-    ret['changes'] = {name: {'old': 'present', 'new':'absent'}}
-    ret['result'] = response.status_code in [200, 404]
-    return ret
+    return _ret_of_delete(response, name)
+
 
 def _post(admin_api, path, body):
     url = admin_api + path
@@ -63,6 +45,40 @@ def _delete(admin_api, path):
     response = requests.delete(url)
     logger.info("Response: %d\n%s\n" % (response.status_code, response.content))
     return response
+
+def _ret_of_post(response, name):
+    ret = _ret(response, name)
+    ret['changes'] = _changes_of_post(response, name)
+    ret['result'] = response.status_code in [201, 409]
+    return ret
+
+def _ret_of_delete(response, name):
+    ret = _ret(response, name)
+    ret['changes'] = _changes_of_delete(response, name)
+    ret['result'] = response.status_code in [204, 404]
+    return ret
+
+def _changes_of_post(response, name):
+    old = ''
+    new = ''
+    if response.status_code == 201:
+        old = 'absent' 
+        new = 'present'
+    elif response.status_code == 409:
+        old = 'present'
+        new = 'present'
+    return {name: {'old': old, 'new': new}}
+
+def _changes_of_delete(response, name):
+    old = ''
+    new = ''
+    if response.status_code == 204:
+        old = 'present' 
+        new = 'absent'
+    elif response.status_code == 404:
+        old = 'absent'
+        new = 'absent'
+    return {name: {'old': old, 'new': new}}
 
 def _ret(response, name):
     ret = {}
