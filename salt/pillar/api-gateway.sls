@@ -17,6 +17,10 @@ api_gateway:
             # taken from the demo
             upstream_url: http://mockbin.com/
             request_host: mockbin.com
+
+        example:
+            upstream_url: http://example.com/
+            request_path: /example
         
     # APIs that once existed but should not exist any longer
     absent_endpoints: 
