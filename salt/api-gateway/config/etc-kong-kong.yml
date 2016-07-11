@@ -29,7 +29,7 @@ proxy_listen: "0.0.0.0:80"
 
 ######
 ## Same as proxy_listen, but for HTTPS requests.
-# proxy_listen_ssl: "0.0.0.0:8443"
+proxy_listen_ssl: "0.0.0.0:443"
 
 ######
 ## Address and port on which the admin API will listen to. The admin API is a private API which lets you
