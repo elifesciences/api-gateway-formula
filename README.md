@@ -12,7 +12,7 @@ for a reference on how to integrate with the `builder` project.
 
 ## Copyright & Licence
 
-Copyright 2016 eLife Sciences. Licensed under the [GPLv3](LICENCE.txt)
+Copyright 2016 eLife Sciences. Licensed under the [MIT license](LICENSE)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
