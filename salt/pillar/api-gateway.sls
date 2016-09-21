@@ -31,14 +31,20 @@ api_gateway:
         echo:
             key-auth: 
                 "config.hide_credentials": true
+                "config.key_names": Authorization
             acl:
                 "config.whitelist": "admin,user"
             file-log:
                 "config.path": "/tmp/kong.log"
+        example:
+            key-auth: 
+                "config.hide_credentials": true
+                "config.key_names": Authorization
 
     # known api consumers and their keys
     consumers:
         # user: key
+        anonymous: public
         journal-prod: journal-prod-key
         journal-preview: journal-preview-key
 
@@ -51,4 +57,6 @@ api_gateway:
             - user
         journal-preview:
             - admin
+        anonymous:
+            - user
 
