@@ -13,10 +13,11 @@ api_gateway:
     # known API endpoints
     # https://getkong.org/docs/0.8.x/admin-api/#add-api
     endpoints:
-        bunyip:
+        echo:
             # taken from the demo
-            upstream_url: http://mockbin.com/
-            request_host: mockbin.com
+            upstream_url: https://httpbin.org/headers
+            request_path: /echo
+            strip_request_path: True
 
         example:
             upstream_url: http://example.com/
@@ -24,17 +25,30 @@ api_gateway:
         
     # APIs that once existed but should not exist any longer
     absent_endpoints: 
-        - bunyip
+        - not_there_anymore
 
     endpoint_plugins:
-        bunyip:
-            key-auth: {}
+        echo:
+            key-auth: 
+                "config.hide_credentials": true
+            acl:
+                "config.whitelist": "admin,user"
+            file-log:
+                "config.path": "/tmp/kong.log"
 
     # known api consumers and their keys
     consumers:
         # user: key
-        bottersnipe: gumble
+        journal-prod: journal-prod-key
+        journal-preview: journal-preview-key
 
     # api consumers who once existed but should not exist any longer
     absent_consumers:
-        - bottersnipe
+        - some_old_consumer
+
+    groups:
+        journal-prod:
+            - user
+        journal-preview:
+            - admin
+

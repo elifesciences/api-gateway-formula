@@ -148,6 +148,16 @@ add-consumer-{{ name }}-key:
             - kong: add-consumer-{{ name }}
 {% endfor %}
 
+{% for user, groups in app.groups.items() %}
+{% for group in groups %}
+associate-consumer-{{ user }}-to-group-{{ group }}:
+    kong.post_acl:
+        - name: {{ user }}
+        - admin_api: {{ app.admin }}
+        - group: {{ group }}
+{% endfor %}
+{% endfor %}
+
 {% for name in app.absent_endpoints %}
 remove-api-endpoint-{{ name }}:
     kong.delete_api:

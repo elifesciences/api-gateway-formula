@@ -1,5 +1,7 @@
 import requests
 import logging
+import json
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +25,34 @@ def delete_api(name, admin_api):
     return _ret_of_delete(response, name)
 
 def post_plugin(name, api, admin_api, params={}):
+    existing_plugin = _plugin(admin_api, api, name)
+    if existing_plugin:
+        if existing_plugin['config'] == _plugin_config(params):
+            return _ret_noop(name)
+        else:
+            # there may be another method to update a plugin,
+            # but it's not documented in Kong
+            path = "/apis/" + api + "/plugins/" + existing_plugin['id']
+            assert _delete(admin_api, path).status_code == 204
     body = dict(params)
     body['name'] = name
     response = _post(admin_api, "/apis/" + api + "/plugins/", body)
     return _ret_of_post(response, name)
+
+def _plugin(admin_api, api, name):
+    response = _get(admin_api, "/apis/" + api + "/plugins")
+    assert response.status_code in [200], "Strange response code: %s" % response
+    matching = [plugin for plugin in json.loads(response.content)['data'] if plugin['name'] == name]
+    assert len(matching) <= 1
+    if len(matching):
+        return matching[0]
+    else:
+        return None
+
+def _plugin_config(params):
+    params_related_to_config = [param_key for param_key in params.keys() if re.match(r"^config\..+", param_key)]
+    _strip_config_prefix = lambda key: re.sub(r"^config\.", "", key)
+    return {_strip_config_prefix(param_key): params[param_key] for param_key in params_related_to_config}
 
 def post_consumer(name, admin_api):
     response = _post(admin_api, "/consumers", {'username': name})
@@ -35,6 +61,17 @@ def post_consumer(name, admin_api):
 def post_key(name, admin_api, key):
     response = _post(admin_api, "/consumers/" + name + "/key-auth/", {'key': key})
     return _ret_of_post(response, name)
+
+def post_acl(name, admin_api, group):
+    if _acl_exists(admin_api, name, group):
+        return _ret_noop(name)
+    response = _post(admin_api, "/consumers/" + name + "/acls", {'group': group})
+    return _ret_of_post(response, name)
+
+def _acl_exists(admin_api, name, group):
+    response = _get(admin_api, "/consumers/" + name + "/acls")
+    assert response.status_code in [200], "Strange response code: %s" % response
+    return group in [acl['group'] for acl in json.loads(response.content)['data']]
 
 def delete_consumer(name, admin_api):
     response = _delete(admin_api, "/consumers/" + name)
@@ -128,3 +165,10 @@ def _ret(response, name):
     ret['comment'] = "Response: %d" % response.status_code
     return ret
 
+def _ret_noop(name):
+    ret = {}
+    ret['name'] = name
+    ret['comment'] = "Nothing to do"
+    ret['changes'] = {}
+    ret['result'] = True
+    return ret
