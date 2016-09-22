@@ -86,8 +86,17 @@ kong-service:
 
 
 #
-# add/remove API endpoints
+# remove API endpoints, add the new ones
 #
+
+{% for name in app.absent_endpoints %}
+remove-api-endpoint-{{ name }}:
+    kong.delete_api:
+        - name: {{ name }}
+        - admin_api: {{ app.admin }}
+        - require:
+            - service: kong-service
+{% endfor %}
 
 {% for name, params in app.endpoints.items() %}
 add-api-endpoint-{{ name }}:
@@ -130,9 +139,19 @@ all-plugins-installed:
 
 
 #
-# add/remove API consumers
+# remove API consumers, then add the new ones
 # consumers requires plugins (key-auth plugin)
 #
+
+{% for name in app.absent_consumers %}
+remove-consumer-{{ name }}:
+    kong.delete_consumer:
+        - name: {{ name }}
+        - admin_api: {{ app.admin }}
+        - require:
+            - service: kong-service
+{% endfor %}
+
 
 {% for name, key in app.consumers.items() %}
 add-consumer-{{ name }}:
@@ -160,23 +179,5 @@ associate-consumer-{{ user }}-to-group-{{ group }}:
         - admin_api: {{ app.admin }}
         - group: {{ group }}
 {% endfor %}
-{% endfor %}
-
-{% for name in app.absent_endpoints %}
-remove-api-endpoint-{{ name }}:
-    kong.delete_api:
-        - name: {{ name }}
-        - admin_api: {{ app.admin }}
-        - require:
-            - service: kong-service
-{% endfor %}
-
-{% for name in app.absent_consumers %}
-remove-consumer-{{ name }}:
-    kong.delete_consumer:
-        - name: {{ name }}
-        - admin_api: {{ app.admin }}
-        - require:
-            - service: kong-service
 {% endfor %}
 
