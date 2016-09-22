@@ -38,6 +38,10 @@ kong-init-script:
         - require:
             - pkg: install-kong
 
+kong-api-calls-logs:
+    file.directory:
+        - name: /var/log/kong
+        - dir_mode: 755
 
 #
 # db
