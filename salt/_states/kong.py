@@ -59,8 +59,16 @@ def post_consumer(name, admin_api):
     return _ret_of_post(response, name)
 
 def post_key(name, admin_api, key):
+    if _key_exists(admin_api, name, key):
+        return _ret_noop(name)
     response = _post(admin_api, "/consumers/" + name + "/key-auth/", {'key': key})
-    return _ret_of_post(response, name)
+    return _ret_of_post(response, name, [201])
+
+def _key_exists(admin_api, name, key):
+    response = _get(admin_api, "/consumers/" + name + "/key-auth/")
+    assert response.status_code == 200, "Strange response code: %s" % response
+    keys = [k['key'] for k in json.loads(response.content)['data']]
+    return key in keys
 
 def post_acl(name, admin_api, group):
     if _acl_exists(admin_api, name, group):
@@ -108,10 +116,12 @@ def _delete(admin_api, path):
 def _log_response(response):
     logger.info("Response: %d\n%s\n" % (response.status_code, response.content))
 
-def _ret_of_post(response, name):
+def _ret_of_post(response, name, expected_status_codes=None):
+    if not expected_status_codes:
+        expected_status_codes = [201, 409]
     ret = _ret(response, name)
     ret['changes'] = _changes_of_post(response, name)
-    ret['result'] = response.status_code in [201, 409]
+    ret['result'] = response.status_code in expected_status_codes
     return ret
 
 def _ret_of_patch(response, name):
