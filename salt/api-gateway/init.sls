@@ -12,6 +12,11 @@ install-kong-deps:
 install-kong:
     pkg.installed:
         - sources:
+            # if you upgrade, somewhere down the line the init script
+            # used in kong-init-script (which has never been an init script
+            # but only a cli tool) will stop working as it does not respond
+            # to `status` anymore
+            # https://github.com/Mashape/kong/issues/3#issuecomment-249337198
             - kong: https://github.com/Mashape/kong/releases/download/0.8.3/kong-0.8.3.trusty_all.deb
         - unless:
             - dpkg -l kong | grep kong
