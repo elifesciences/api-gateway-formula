@@ -31,11 +31,13 @@ configure-kong-app:
         - require:
             - pkg: install-kong
     
+kong-ulimit:
     file.append:
         # maximum file descriptors is 1024 and Kong complains about it being not optimal
         - name: /etc/security/limits.conf
         - text:
             - root hard nofile 4096
+        - require: configure-kong-app
             
 kong-init-script:
     # kong's `kong` file implements the stop/start/restart/reload interface
@@ -84,8 +86,9 @@ kong-service:
         # change the interface from port 8000 to port 80 required a restart
         - reload: True
         - require:
-            - file: configure-kong-app
-            - file: kong-init-script
+            - configure-kong-app
+            - kong-ulimit
+            - kong-init-script
             - postgres_database: kong-db-exists
         - watch:
             # reload if config changes
