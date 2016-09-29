@@ -31,9 +31,11 @@ configure-kong-app:
         - require:
             - pkg: install-kong
     
-    cmd.run:
-        # default is 1024 this limits memory usage of R processes
-        - name: ulimit -n 4096
+    file.append:
+        # maximum file descriptors is 1024 and Kong complains about it being not optimal
+        - name: /etc/security/limits.conf
+        - text:
+            - root hard nofile 4096
             
 kong-init-script:
     # kong's `kong` file implements the stop/start/restart/reload interface
