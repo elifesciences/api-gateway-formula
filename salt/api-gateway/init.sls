@@ -89,6 +89,16 @@ kong-service:
             # reload if config changes
             - file: configure-kong-app
 
+kong-syslog-ng-for-nginx-logs:
+    file.managed:
+        - name: /etc/syslog-ng/conf.d/kong.conf
+        - source: salt://api-gateway/config/etc-syslog-ng-conf.d-kong.conf
+        - template: jinja
+        - require:
+            - syslog-ng
+            - kong-service 
+        - listen_in:
+            - service: syslog-ng
 
 #
 # remove API endpoints, add the new ones
