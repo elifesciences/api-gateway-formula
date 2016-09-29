@@ -39,6 +39,14 @@ kong-ulimit:
             - root hard nofile 4096
         - require: 
             - configure-kong-app
+
+kong-ulimit-enable:
+    file.append:
+        - name: /etc/pam.d/su
+        - text:
+            - session required pam_limits.so
+        - require:
+            - kong-ulimit
             
 kong-init-script:
     # kong's `kong` file implements the stop/start/restart/reload interface
@@ -88,7 +96,7 @@ kong-service:
         - reload: True
         - require:
             - configure-kong-app
-            - kong-ulimit
+            - kong-ulimit-enable
             - kong-init-script
             - postgres_database: kong-db-exists
         - watch:
