@@ -89,6 +89,11 @@ kong-service:
             # reload if config changes
             - file: configure-kong-app
 
+kong-logrotate:
+    file.managed:
+        - name: /etc/logrotate.d/kong
+        - source: salt://api-gateway/config/etc-logrotate.d-kong
+
 kong-syslog-ng-for-nginx-logs:
     file.managed:
         - name: /etc/syslog-ng/conf.d/kong.conf

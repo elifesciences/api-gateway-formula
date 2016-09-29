@@ -1,0 +1,7 @@
+/usr/local/kong/logs/*.log {
+    daily
+    rotate 7
+    notifempty
+    missingok
+    compress
+}
