@@ -37,7 +37,8 @@ kong-ulimit:
         - name: /etc/security/limits.conf
         - text:
             - root hard nofile 4096
-        - require: configure-kong-app
+        - require: 
+            - configure-kong-app
             
 kong-init-script:
     # kong's `kong` file implements the stop/start/restart/reload interface
