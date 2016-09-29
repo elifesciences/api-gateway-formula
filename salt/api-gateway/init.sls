@@ -36,6 +36,9 @@ kong-ulimit:
         # maximum file descriptors is 1024 and Kong complains about it being not optimal
         - name: /etc/security/limits.conf
         - text:
+            - * soft nofile 4096
+            - * hard nofile 4096
+            - root soft nofile 4096
             - root hard nofile 4096
         - require: 
             - configure-kong-app
