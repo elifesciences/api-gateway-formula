@@ -362,6 +362,7 @@ nginx: |
           local lapis = require "lapis"
           lapis.serve "kong.api.app"
         }
+        access_log off;
       }
 
       location /nginx_status {
