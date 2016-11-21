@@ -215,6 +215,8 @@ associate-consumer-{{ user }}-to-group-{{ group }}:
         - name: {{ user }}
         - admin_api: {{ app.admin }}
         - group: {{ group }}
+        - require:
+            - add-consumer-{{ user }}
 {% endfor %}
 {% endfor %}
 
