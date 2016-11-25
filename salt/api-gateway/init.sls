@@ -30,6 +30,9 @@ configure-kong-app:
         - template: jinja
         - require:
             - pkg: install-kong
+            {% if salt['elife.cfg']('cfn.outputs.DomainName') %}
+            - web-ssl-enabled
+            {% endif %}
     
 kong-ulimit:
     file.append:

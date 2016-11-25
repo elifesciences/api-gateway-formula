@@ -49,8 +49,13 @@ proxy_listen_ssl: "0.0.0.0:443"
 
 ######
 ## The path to the SSL certificate and key that Kong will use when listening on the `https` port.
-# ssl_cert_path: /path/to/certificate.pem
-# ssl_key_path: /path/to/certificate.key
+{% if salt['elife.cfg']('cfn.outputs.DomainName') %}
+ssl_cert_path: /etc/certificates/certificate.crt
+ssl_key_path: /etc/certificates/privkey.pem
+{% else %}
+#ssl_cert_path: /path/to/certificate.pem
+#ssl_key_path: /path/to/certificate.key
+{% endif %}
 
 ######
 ## Specify how Kong performs DNS resolution (in the `dns_resolvers_available` property) you want to use.
