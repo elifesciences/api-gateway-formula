@@ -10,23 +10,21 @@ install-kong-deps:
             - procps
 
 install-kong:
+    pkgrepo.managed:
+        - name: deb https://dl.bintray.com/mashape/kong-ubuntu-trusty-0.9.x trusty main
+
     pkg.installed:
-        - sources:
-            # if you upgrade, somewhere down the line the init script
-            # used in kong-init-script (which has never been an init script
-            # but only a cli tool) will stop working as it does not respond
-            # to `status` anymore
-            # https://github.com/Mashape/kong/issues/3#issuecomment-249337198
-            - kong: https://github.com/Mashape/kong/releases/download/0.8.3/kong-0.8.3.trusty_all.deb
-        - unless:
-            - dpkg -l kong | grep kong
+        - name: kong
+        - force_yes: True
+        #- unless:
+        #    - dpkg -l kong | grep kong
         - require:
             - pkg: install-kong-deps
 
 configure-kong-app:
     file.managed:
-        - name: /etc/kong/kong.yml
-        - source: salt://api-gateway/config/etc-kong-kong.yml
+        - name: /etc/kong/kong.conf
+        - source: salt://api-gateway/config/etc-kong-kong.conf
         - template: jinja
         - require:
             - pkg: install-kong
