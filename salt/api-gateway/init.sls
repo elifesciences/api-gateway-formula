@@ -10,23 +10,23 @@ install-kong-deps:
             - procps
 
 install-kong:
+    pkgrepo.managed:
+        - name: deb https://dl.bintray.com/mashape/kong-ubuntu-trusty-0.9.x trusty main
+
     pkg.installed:
-        - sources:
-            # if you upgrade, somewhere down the line the init script
-            # used in kong-init-script (which has never been an init script
-            # but only a cli tool) will stop working as it does not respond
-            # to `status` anymore
-            # https://github.com/Mashape/kong/issues/3#issuecomment-249337198
-            - kong: https://github.com/Mashape/kong/releases/download/0.8.3/kong-0.8.3.trusty_all.deb
-        - unless:
-            - dpkg -l kong | grep kong
+        - name: kong
+        - version: 0.9.5
+        - refresh: True # ensures pkgrepo is up to date
+        - force_yes: True
+        #- unless:
+        #    - dpkg -l kong | grep kong
         - require:
             - pkg: install-kong-deps
 
 configure-kong-app:
     file.managed:
-        - name: /etc/kong/kong.yml
-        - source: salt://api-gateway/config/etc-kong-kong.yml
+        - name: /etc/kong/kong.conf
+        - source: salt://api-gateway/config/etc-kong-kong.conf
         - template: jinja
         - require:
             - pkg: install-kong
@@ -97,6 +97,7 @@ kong-service:
     service.running:
         - name: kong
         - enable: True
+        - sig: nginx # don't look for 'kong', look for 'nginx'
         # supports reloading, but *some* config changes require a restart
         # change the interface from port 8000 to port 80 required a restart
         - reload: True
