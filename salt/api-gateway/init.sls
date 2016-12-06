@@ -15,6 +15,8 @@ install-kong:
 
     pkg.installed:
         - name: kong
+        - version: 0.9.5
+        - refresh: True # ensures pkgrepo is up to date
         - force_yes: True
         #- unless:
         #    - dpkg -l kong | grep kong
@@ -95,6 +97,7 @@ kong-service:
     service.running:
         - name: kong
         - enable: True
+        - sig: nginx # don't look for 'kong', look for 'nginx'
         # supports reloading, but *some* config changes require a restart
         # change the interface from port 8000 to port 80 required a restart
         - reload: True
