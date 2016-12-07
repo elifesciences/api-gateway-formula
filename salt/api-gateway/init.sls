@@ -63,14 +63,6 @@ kong-ulimit-enable:
         - require:
             - kong-ulimit
             
-kong-init-script:
-    # kong's `kong` file implements the stop/start/restart/reload interface
-    file.symlink:
-        - name: /etc/init.d/kong
-        - target: /usr/local/bin/kong
-        - require:
-            - pkg: install-kong
-
 kong-api-calls-logs:
     file.directory:
         - name: /var/log/kong
@@ -102,6 +94,19 @@ kong-db-exists:
 #
 #
 
+kong-init-script:
+    file.managed:
+        - name: /etc/init/kong.conf
+        - source: salt://api-gateway/config/etc-init-kong.conf
+        - template: jinja
+
+old-kong-init-script:
+    # this was a symlink we once had setup
+    file.absent:
+        - name: /etc/init.d/kong
+        - require:
+            - install-kong
+
 kong-service:
     service.running:
         - name: kong
@@ -111,9 +116,10 @@ kong-service:
         # change the interface from port 8000 to port 80 required a restart
         - reload: True
         - require:
+            - kong-init-script
+            - old-kong-init-script
             - configure-kong-app
             - kong-ulimit-enable
-            - kong-init-script
             - postgres_database: kong-db-exists
         - watch:
             # reload if config changes
