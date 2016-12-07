@@ -1,4 +1,3 @@
-return [[
 worker_processes ${{NGINX_WORKER_PROCESSES}};
 daemon ${{NGINX_DAEMON}};
 
@@ -23,21 +22,21 @@ http {
     error_log logs/error.log ${{LOG_LEVEL}};
     access_log logs/access.log;
 
-    > if anonymous_reports then
+> if anonymous_reports then
     ${{SYSLOG_REPORTS}}
-    > end
+> end
 
-    > if nginx_optimizations then
-    >-- send_timeout 60s;          # default value
-    >-- keepalive_timeout 75s;     # default value
-    >-- client_body_timeout 60s;   # default value
-    >-- client_header_timeout 60s; # default value
-    >-- tcp_nopush on;             # disabled until benchmarked
-    >-- proxy_buffer_size 128k;    # disabled until benchmarked
-    >-- proxy_buffers 4 256k;      # disabled until benchmarked
-    >-- proxy_busy_buffers_size 256k; # disabled until benchmarked
-    >-- reset_timedout_connection on; # disabled until benchmarked
-    > end
+> if nginx_optimizations then
+>-- send_timeout 60s;          # default value
+>-- keepalive_timeout 75s;     # default value
+>-- client_body_timeout 60s;   # default value
+>-- client_header_timeout 60s; # default value
+>-- tcp_nopush on;             # disabled until benchmarked
+>-- proxy_buffer_size 128k;    # disabled until benchmarked
+>-- proxy_buffers 4 256k;      # disabled until benchmarked
+>-- proxy_busy_buffers_size 256k; # disabled until benchmarked
+>-- reset_timedout_connection on; # disabled until benchmarked
+> end
 
     client_max_body_size 0;
     proxy_ssl_server_name on;
@@ -58,10 +57,10 @@ http {
     lua_shared_dict cassandra 1m;
     lua_shared_dict cassandra_prepared 5m;
     lua_socket_log_errors off;
-    > if lua_ssl_trusted_certificate then
+> if lua_ssl_trusted_certificate then
     lua_ssl_trusted_certificate '${{LUA_SSL_TRUSTED_CERTIFICATE}}';
     lua_ssl_verify_depth ${{LUA_SSL_VERIFY_DEPTH}};
-    > end
+> end
 
     init_by_lua_block {
         require 'resty.core'
@@ -79,7 +78,7 @@ http {
         error_page 404 408 411 412 413 414 417 /kong_error_handler;
         error_page 500 502 503 504 /kong_error_handler;
 
-    > if ssl then
+> if ssl then
         listen ${{PROXY_LISTEN_SSL}} ssl;
         ssl_certificate ${{SSL_CERT}};
         ssl_certificate_key ${{SSL_CERT_KEY}};
@@ -87,7 +86,7 @@ http {
         ssl_certificate_by_lua_block {
             kong.ssl_certificate()
         }
-    > end
+> end
 
         location / {
             # eLife mega-hack to make the API public
@@ -168,4 +167,3 @@ http {
         }
     }
 }
-]]
