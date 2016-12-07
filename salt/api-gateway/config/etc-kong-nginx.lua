@@ -90,6 +90,17 @@ http {
     > end
 
         location / {
+            # eLife mega-hack to make the API public
+            # only if an Authorization header is not provided,
+            # add a query string parameter that Kong will recognize
+            # as a fall back for authentication.
+            # This key 'public', which must be provisioned into a consumer
+            # through pillar.api_gateway.consumers, will authenticate
+            # the user so that the ACL plugin can work on top of it.
+            if ($http_authorization = '') {   
+                rewrite ^(.*)$ $1?Authorization=public break;
+            } 
+
             set $upstream_host nil;
             set $upstream_url nil;
 
