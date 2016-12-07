@@ -23,6 +23,13 @@ install-kong:
         - require:
             - pkg: install-kong-deps
 
+kong-custom-nginx-configuration:
+    file.managed:
+        - name: /etc/kong/nginx.lua
+        - source: salt://api-gateway/config/etc-kong-nginx.lua
+        - require:
+            - install-kong
+
 configure-kong-app:
     file.managed:
         - name: /etc/kong/kong.conf
@@ -33,6 +40,8 @@ configure-kong-app:
             {% if salt['elife.cfg']('cfn.outputs.DomainName') %}
             - web-ssl-enabled
             {% endif %}
+            - kong-custom-nginx-configuration
+
     
 kong-ulimit:
     file.append:
