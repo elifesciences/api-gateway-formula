@@ -1,5 +1,26 @@
 {% set app = pillar.api_gateway %}
 
+#
+# nginx proxy
+# this instance sits in front of kong and proxies all requests back and forth
+#
+
+proxy:
+    file.managed:
+        - name: /etc/nginx/sites-enabled/proxy.conf
+        - source: salt://api-gateway/config/etc-nginx-sites-enabled-proxy.conf
+        - template: jinja
+
+    service.running:
+        - name: nginx
+        - require:
+            - file: proxy    
+
+
+#
+# kong
+#
+
 install-kong-deps:
     pkg.installed:
         - pkgs:
@@ -30,9 +51,17 @@ kong-custom-nginx-configuration:
         - require:
             - install-kong
 
+old-kong-conf-file:
+    # Kong 0.9.6 causes problems if /etc/kong/kong.conf exists and there is
+    # more than one nginx instance running
+    file.absent:
+        - name: /etc/kong/kong.conf
+
 configure-kong-app:
     file.managed:
-        - name: /etc/kong/kong.conf
+        # Kong 0.9.6 causes problems if /etc/kong/kong.conf exists and there is
+        # more than one nginx instance running
+        - name: /etc/kong/custom-kong.conf
         - source: salt://api-gateway/config/etc-kong-kong.conf
         - template: jinja
         - require:
