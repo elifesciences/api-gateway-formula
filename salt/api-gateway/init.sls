@@ -62,7 +62,7 @@ configure-kong-app:
         # Kong 0.9.6 causes problems if /etc/kong/kong.conf exists and there is
         # more than one nginx instance running
         - name: /etc/kong/custom-kong.conf
-        - source: salt://api-gateway/config/etc-kong-kong.conf
+        - source: salt://api-gateway/config/etc-kong-custom-kong.conf
         - template: jinja
         - require:
             - pkg: install-kong
