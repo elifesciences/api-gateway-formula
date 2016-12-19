@@ -2,4 +2,5 @@ base:
     '*':
         - elife
         - elife.postgresql
+        - elife.nginx
         - api-gateway
