@@ -9,6 +9,7 @@ proxy:
     file.managed:
         - name: /etc/nginx/sites-enabled/proxy.conf
         - source: salt://api-gateway/config/etc-nginx-sites-enabled-proxy.conf
+        - makedirs: True
         - template: jinja
 
     service.running:
