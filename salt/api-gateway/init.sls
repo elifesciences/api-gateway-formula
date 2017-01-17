@@ -96,7 +96,7 @@ kong-ulimit-enable:
 kong-api-calls-logs:
     file.directory:
         - name: /var/log/kong
-        - dir_mode: 755
+        - dir_mode: 777
 
 #
 # db
