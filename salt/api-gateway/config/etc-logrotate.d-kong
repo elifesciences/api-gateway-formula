@@ -6,3 +6,12 @@
     compress
     copytruncate
 }
+
+/var/log/kong/*.log {
+    daily
+    rotate 7
+    notifempty
+    missingok
+    compress
+    copytruncate
+}
