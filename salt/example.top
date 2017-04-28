@@ -3,4 +3,5 @@ base:
         - elife
         - elife.postgresql
         - elife.nginx
+        - elife.nginx-error-pages
         - api-gateway
