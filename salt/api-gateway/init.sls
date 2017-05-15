@@ -98,7 +98,7 @@ configure-kong-app:
     
 kong-ulimit:
     file.append:
-        # maximum file descriptors is 1024 and Kong complains about it being not optimal
+        # maximum file descriptors is 1024 and Kong complains about it not being optimal
         - name: /etc/security/limits.conf
         - text:
             - "* soft nofile 4096"
@@ -119,7 +119,11 @@ kong-ulimit-enable:
 kong-api-calls-logs:
     file.directory:
         - name: /var/log/kong
-        - dir_mode: 777
+        - user: root
+        - group: root
+        - dir_mode: 640
+        - recurse:
+            - mode
 
 #
 # db
@@ -153,13 +157,6 @@ kong-init-script:
         - source: salt://api-gateway/config/etc-init-kong.conf
         - template: jinja
 
-old-kong-init-script:
-    # this was a symlink we once had setup
-    file.absent:
-        - name: /etc/init.d/kong
-        - require:
-            - install-kong
-
 kong-service:
     service.running:
         - name: kong
@@ -170,7 +167,6 @@ kong-service:
         - reload: True
         - require:
             - kong-init-script
-            - old-kong-init-script
             - configure-kong-app
             - kong-ulimit-enable
             - postgres_database: kong-db-exists
