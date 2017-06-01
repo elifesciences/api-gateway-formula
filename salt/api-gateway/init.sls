@@ -121,7 +121,7 @@ kong-api-calls-logs:
         - name: /var/log/kong
         - user: root
         - group: root
-        - dir_mode: 640
+        - dir_mode: 755
         - recurse:
             - mode
 
