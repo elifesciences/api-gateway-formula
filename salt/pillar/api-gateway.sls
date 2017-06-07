@@ -35,7 +35,7 @@ api_gateway:
             acl:
                 "config.whitelist": "admin,user"
             file-log:
-                "config.path": "/tmp/kong.log"
+                "config.path": "/var/log/kong/echo.log"
         example:
             key-auth: 
                 "config.hide_credentials": true

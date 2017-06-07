@@ -119,9 +119,9 @@ kong-ulimit-enable:
 kong-api-calls-logs:
     file.directory:
         - name: /var/log/kong
-        - user: root
+        - user: nobody
         - group: root
-        - dir_mode: 777
+        - dir_mode: 755
         - recurse:
             - mode
 
@@ -170,6 +170,7 @@ kong-service:
             - configure-kong-app
             - kong-ulimit-enable
             - postgres_database: kong-db-exists
+            - kong-api-calls-logs
         - watch:
             # reload if config changes
             - file: configure-kong-app
