@@ -34,11 +34,8 @@ proxy:
         - template: jinja
         - require:
             - api-documentation
-
-    service.running:
-        - name: nginx
-        - require:
-            - file: proxy    
+        - watch_in:
+            - service: nginx-server-service
 
 
 #
@@ -56,7 +53,11 @@ install-kong-deps:
 
 install-kong:
     pkgrepo.managed:
+        {% if salt['grains.get']('oscodename') == 'xenial' %}
+        - name: deb https://dl.bintray.com/mashape/kong-ubuntu-xenial-0.9.x xenial main        
+        {% else %}
         - name: deb https://dl.bintray.com/mashape/kong-ubuntu-trusty-0.9.x trusty main
+        {% endif %}
 
     pkg.installed:
         - name: kong
@@ -151,10 +152,16 @@ kong-db-exists:
 #
 #
 
-kong-init-script:
+kong-upstart-script:
     file.managed:
         - name: /etc/init/kong.conf
         - source: salt://api-gateway/config/etc-init-kong.conf
+        - template: jinja
+
+kong-systemd-script:
+    file.managed:
+        - name: /lib/systemd/system/kong.service
+        - source: salt://api-gateway/config/lib-systemd-system-kong.service
         - template: jinja
 
 kong-service:
@@ -164,9 +171,11 @@ kong-service:
         - sig: nginx # don't look for 'kong', look for 'nginx'
         # supports reloading, but *some* config changes require a restart
         # change the interface from port 8000 to port 80 required a restart
-        - reload: True
+        #- reload: True # disabled 2017-08-15. systemd+graceful reload not figured out yet
+        - init_delay: 2 # kong needs a moment :(
         - require:
-            - kong-init-script
+            - kong-upstart-script
+            - kong-systemd-script
             - configure-kong-app
             - kong-ulimit-enable
             - postgres_database: kong-db-exists
