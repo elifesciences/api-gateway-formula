@@ -57,6 +57,11 @@ api_gateway:
             - user
         journal-preview:
             - admin
+            - view-unpublished-content
         anonymous:
             - user
 
+    # groups who once were associated to a consumer but should not be associated any longer
+    absent_groups:
+        journal-preview:
+            - admin

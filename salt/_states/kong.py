@@ -76,6 +76,12 @@ def post_acl(name, admin_api, group):
     response = _post(admin_api, "/consumers/" + name + "/acls", {'group': group})
     return _ret_of_post(response, name)
 
+def delete_acl(name, group, admin_api):
+    if not _acl_exists(admin_api, name, group):
+        return _ret_noop(name)
+    response = _delete(admin_api, "/consumers/" + name + "/acls/" + group)
+    return _ret_of_delete(response, name)
+
 def _acl_exists(admin_api, name, group):
     response = _get(admin_api, "/consumers/" + name + "/acls")
     assert response.status_code in [200], "Strange response code: %s" % response
