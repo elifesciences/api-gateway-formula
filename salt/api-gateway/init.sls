@@ -300,7 +300,7 @@ associate-consumer-{{ user }}-to-group-{{ group }}:
 
 {% for user, groups in app.absent_groups.items() %}
 {% for group in groups %}
-disassociate-consumer-{{ user }}-to-group-{{ group }}:
+disassociate-consumer-{{ user }}-from-group-{{ group }}:
     kong.delete_acl:
         - name: {{ user }}
         - admin_api: {{ app.admin }}
