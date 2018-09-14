@@ -10,6 +10,15 @@ project.
 See the eLife [builder example project](https://github.com/elifesciences/builder-example-project)
 for a reference on how to integrate with the `builder` project.
 
+## Plugins used at eLife
+
+- [key-authentication](https://docs.konghq.com/plugins/key-authentication/) (authenticating with Authorization)
+- [acl](https://docs.konghq.com/plugins/acl/) (adding X-Consumer-Groups)
+- [file-log](https://docs.konghq.com/plugins/file-log/) (logging requests and responses when needed)
+- [cors](https://docs.konghq.com/plugins/cors/) (enabling CORS on selected APIs)
+- [request-transformer](https://docs.konghq.com/plugins/request-transformer/) (adding headers to requests such as `Authorization`)
+- [response-transformer](https://docs.konghq.com/plugins/response-transformer/) (adding headers to responses such as `Vary`)
+
 ## Copyright & Licence
 
 Copyright 2016 eLife Sciences. Licensed under the [MIT license](LICENSE)
