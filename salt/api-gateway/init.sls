@@ -52,16 +52,22 @@ install-kong-deps:
             - procps
 
 install-kong:
+    cmd.run:
+        - name: |
+            curl 'https://bintray.com/user/downloadSubjectPublicKey?username=bintray' | sudo apt-key add -
+
     pkgrepo.managed:
         {% if salt['grains.get']('oscodename') == 'xenial' %}
-        - name: deb https://dl.bintray.com/mashape/kong-ubuntu-xenial-0.9.x xenial main        
+        - name: deb https://kong.bintray.com/kong-community-edition-deb xenial main
         {% else %}
-        - name: deb https://dl.bintray.com/mashape/kong-ubuntu-trusty-0.9.x trusty main
+        - name: deb https://kong.bintray.com/kong-community-edition-deb trusty main
         {% endif %}
+        - require:
+            - cmd: install-kong
 
     pkg.installed:
         - name: kong
-        - version: 0.9.5
+        - version: 0.10.4
         - refresh: True # ensures pkgrepo is up to date
         - force_yes: True
         #- unless:
@@ -73,6 +79,14 @@ kong-custom-nginx-configuration:
     file.managed:
         - name: /etc/kong/nginx.lua
         - source: salt://api-gateway/config/etc-kong-nginx.lua
+        - require:
+            - install-kong
+
+kong-custom-nginx-configuration-2:
+    file.managed:
+        - name: /etc/kong/nginx_kong.lua
+        - source: salt://api-gateway/config/etc-kong-nginx_kong.lua
+        - backup: minion
         - require:
             - install-kong
 

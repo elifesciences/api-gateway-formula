@@ -11,17 +11,22 @@ api_gateway:
         password: kong
 
     # known API endpoints
-    # https://getkong.org/docs/0.8.x/admin-api/#add-api
+    # https://getkong.org/docs/0.10.x/admin-api/#add-api
     endpoints:
         echo:
             # taken from the demo
             upstream_url: https://httpbin.org/headers
-            request_path: /echo
-            strip_request_path: True
+            # is just 'uris' in 0.10.x
+            #request_path: /echo
+            uris: /echo
+            # is just 'strip_uri' in 0.10.x
+            #strip_request_path: True
+            strip_uri: True
 
         example:
-            upstream_url: http://example.com/
-            request_path: /example
+            upstream_url: http://example.com
+            #request_path: /example
+            uris: /example
         
     # APIs that once existed but should not exist any longer
     absent_endpoints: 
