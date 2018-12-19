@@ -51,6 +51,10 @@ install-kong-deps:
             - dnsmasq
             - procps
 
+remove-old-kong-ppa:
+    pkgrepo.absent:
+        - name: deb https://dl.bintray.com/mashape/kong-ubuntu-trusty-0.9.x trusty main
+
 install-kong:
     cmd.run:
         - name: |
@@ -64,6 +68,7 @@ install-kong:
         {% endif %}
         - require:
             - cmd: install-kong
+            - remove-old-kong-ppa
 
     pkg.installed:
         - name: kong
