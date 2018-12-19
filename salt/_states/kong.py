@@ -91,6 +91,16 @@ def delete_consumer(name, admin_api):
     response = _delete(admin_api, "/consumers/" + name)
     return _ret_of_delete(response, name)
 
+def rename(data, pair_list):
+    "mutator!"
+    for old, new in pair_list.items():
+        if old in data:
+            data[new] = data[old]
+            del d[old]
+
+def upgrade_body(body):
+    rename(body, [('strip_request_path', 'strip_uri'), ('request_path', 'uris')])
+
 def _get(admin_api, path):
     url = admin_api + path
     logger.info("Request: GET %s\n" % url)
@@ -100,6 +110,7 @@ def _get(admin_api, path):
 
 def _post(admin_api, path, body):
     url = admin_api + path
+    upgrade_body(body)
     logger.info("Request: POST %s\n%s\n" % (url, body))
     response = requests.post(url, data=body)
     _log_response(response)
@@ -107,6 +118,7 @@ def _post(admin_api, path, body):
 
 def _patch(admin_api, path, body):
     url = admin_api + path
+    upgrade_body(body)
     logger.info("Request: PATCH %s\n%s\n" % (url, body))
     response = requests.patch(url, data=body)
     _log_response(response)
