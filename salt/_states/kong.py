@@ -93,10 +93,10 @@ def delete_consumer(name, admin_api):
 
 def rename(data, pair_list):
     "mutator!"
-    for old, new in pair_list.items():
+    for old, new in pair_list:
         if old in data:
             data[new] = data[old]
-            del d[old]
+            del data[old]
 
 def upgrade_body(body):
     rename(body, [('strip_request_path', 'strip_uri'), ('request_path', 'uris')])
