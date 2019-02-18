@@ -52,18 +52,16 @@ install-kong-deps:
             - procps
 
 install-kong:
-    pkgrepo.managed:
-        {% if salt['grains.get']('oscodename') == 'xenial' %}
-        - name: deb https://dl.bintray.com/mashape/kong-ubuntu-xenial-0.9.x xenial main        
-        {% else %}
+    pkgrepo.absent:
         - name: deb https://dl.bintray.com/mashape/kong-ubuntu-trusty-0.9.x trusty main
-        {% endif %}
 
     pkg.installed:
-        - name: kong
-        - version: 0.9.5
-        - refresh: True # ensures pkgrepo is up to date
+        #- name: kong
+        #- version: 0.9.5
+        #- refresh: True # ensures pkgrepo is up to date
         - force_yes: True
+        - sources:
+            - kong: salt://api-gateway/files/kong-0.9.5.trusty_all.deb
         #- unless:
         #    - dpkg -l kong | grep kong
         - require:
