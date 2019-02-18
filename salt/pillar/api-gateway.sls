@@ -16,16 +16,13 @@ api_gateway:
         echo:
             # taken from the demo
             upstream_url: https://httpbin.org/headers
-            # is just 'uris' in 0.10.x
-            #request_path: /echo
+            # 'request_path' became 'uris' in 0.10.x
             uris: /echo
-            # is just 'strip_uri' in 0.10.x
-            #strip_request_path: True
+            # 'strip_request_path' became 'strip_uri' in 0.10.x
             strip_uri: True
 
         example:
             upstream_url: http://example.com
-            #request_path: /example
             uris: /example
         
     # APIs that once existed but should not exist any longer
