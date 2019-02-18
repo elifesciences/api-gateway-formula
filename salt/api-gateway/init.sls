@@ -75,8 +75,6 @@ install-kong:
         - version: 0.10.4
         - refresh: True # ensures pkgrepo is up to date
         - force_yes: True
-        #- unless:
-        #    - dpkg -l kong | grep kong
         - require:
             - pkg: install-kong-deps
 
