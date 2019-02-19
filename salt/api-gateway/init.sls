@@ -56,9 +56,16 @@ remove-old-kong-ppa:
         - name: deb https://dl.bintray.com/mashape/kong-ubuntu-trusty-0.9.x trusty main
 
 install-kong:
+    file.managed:
+        - name: /root/bintray.gpg
+        - source: salt://api-gateway/config/root-bintray.gpg
+        # disabled because of intermittant failures with bintray.com
+        #- source: https://bintray.com/user/downloadSubjectPublicKey?username=bintray
+
     cmd.run:
-        - name: |
-            curl --connect-timeout 5 'https://bintray.com/user/downloadSubjectPublicKey?username=bintray' | sudo apt-key add -
+        - name: apt-key add /root/bintray.gpg
+        - require:
+            - file: install-kong
 
     pkgrepo.managed:
         {% if salt['grains.get']('oscodename') == 'xenial' %}
