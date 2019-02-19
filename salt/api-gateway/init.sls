@@ -58,7 +58,7 @@ remove-old-kong-ppa:
 install-kong:
     cmd.run:
         - name: |
-            curl --timeout 5 'https://bintray.com/user/downloadSubjectPublicKey?username=bintray' | sudo apt-key add -
+            curl --connect-timeout 5 'https://bintray.com/user/downloadSubjectPublicKey?username=bintray' | sudo apt-key add -
 
     pkgrepo.managed:
         {% if salt['grains.get']('oscodename') == 'xenial' %}
