@@ -93,18 +93,14 @@ kong-custom-nginx-configuration-2:
         - require:
             - install-kong
 
-old-kong-conf-file:
-    # Kong 0.9.6 causes problems if /etc/kong/kong.conf exists and there is
-    # more than one nginx instance running
-    file.absent:
-        - name: /etc/kong/kong.conf
-
 configure-kong-app:
     file.managed:
         # Kong 0.9.6 causes problems if /etc/kong/kong.conf exists and there is
         # more than one nginx instance running
-        - name: /etc/kong/custom-kong.conf
-        - source: salt://api-gateway/config/etc-kong-custom-kong.conf
+        # 2019-02-19: this doesn't appear to be a problem with 0.10.4
+        # custom-kong.conf renamed back to kong.conf
+        - name: /etc/kong/kong.conf
+        - source: salt://api-gateway/config/etc-kong-kong.conf
         - template: jinja
         - require:
             - pkg: install-kong
@@ -113,7 +109,6 @@ configure-kong-app:
             {% endif %}
             - kong-custom-nginx-configuration
 
-    
 kong-ulimit:
     file.append:
         # maximum file descriptors is 1024 and Kong complains about it not being optimal
@@ -200,6 +195,16 @@ kong-service:
         - watch:
             # reload if config changes
             - file: configure-kong-app
+
+kong-checks:
+    cmd.run:
+        - name: kong check && kong health
+        - require:
+            - kong-service
+
+#
+#
+#
 
 kong-logrotate:
     file.managed:
