@@ -55,6 +55,10 @@ remove-old-kong-ppa:
     pkgrepo.absent:
         - name: deb https://dl.bintray.com/mashape/kong-ubuntu-trusty-0.9.x trusty main
 
+uninstall-old-kong:
+    pkg.purged:
+        - name: kong
+
 install-kong:
     file.managed:
         - name: /root/bintray.gpg
@@ -78,11 +82,12 @@ install-kong:
             - remove-old-kong-ppa
 
     pkg.installed:
-        - name: kong
-        - version: 0.10.4
+        - name: kong-community-edition
+        - version: 0.11.2
         - refresh: True # ensures pkgrepo is up to date
         - force_yes: True
         - require:
+            - uninstall-old-kong
             - pkg: install-kong-deps
 
 # lsh, 2019-02-19: I have no idea what this file does. It's referenced in the init scripts
@@ -145,6 +150,15 @@ kong-api-calls-logs:
         - dir_mode: 755
         - recurse:
             - mode
+
+# kong-migrations:
+#    stop service (on all nodes?)
+#    run migrations
+#    $ kong migrations up
+#    $ touch /root/kong-migrations-[kong version].flag
+#    start service
+#    unless flag exists
+
 
 #
 # db
