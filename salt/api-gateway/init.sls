@@ -58,7 +58,7 @@ remove-old-kong-ppa:
 install-kong:
     cmd.run:
         - name: |
-            curl 'https://bintray.com/user/downloadSubjectPublicKey?username=bintray' | sudo apt-key add -
+            curl --timeout 5 'https://bintray.com/user/downloadSubjectPublicKey?username=bintray' | sudo apt-key add -
 
     pkgrepo.managed:
         {% if salt['grains.get']('oscodename') == 'xenial' %}
@@ -78,6 +78,7 @@ install-kong:
         - require:
             - pkg: install-kong-deps
 
+# lsh, 2019-02-19: I have no idea what this file does. It's referenced in the init scripts
 kong-custom-nginx-configuration:
     file.managed:
         - name: /etc/kong/nginx.lua
