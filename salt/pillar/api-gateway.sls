@@ -22,6 +22,11 @@ api_gateway:
         example:
             upstream_url: http://example.com/
             request_path: /example
+
+        httpbin:
+            upstream_url: https://httpbin.org/
+            request_path: /httpbin.org
+            strip_request_path: True
         
     # APIs that once existed but should not exist any longer
     absent_endpoints: 
@@ -40,6 +45,11 @@ api_gateway:
             key-auth: 
                 "config.hide_credentials": true
                 "config.key_names": Authorization
+
+        httpbin: 
+            response-ratelimiting:
+                "config.limits.highpages.minute": 10
+                "config.limit_by": credential
 
     # known api consumers and their keys
     consumers:
