@@ -55,6 +55,10 @@ remove-old-kong-ppa:
     pkgrepo.absent:
         - name: deb https://dl.bintray.com/mashape/kong-ubuntu-trusty-0.9.x trusty main
 
+uninstall-old-kong:
+    pkg.purged:
+        - name: kong
+
 install-kong:
     file.managed:
         - name: /root/bintray.gpg
@@ -78,11 +82,12 @@ install-kong:
             - remove-old-kong-ppa
 
     pkg.installed:
-        - name: kong
-        - version: 0.10.4
-        - refresh: True # ensures pkgrepo is up to date
+        - name: kong-community-edition
+        - version: 0.11.2 # remember to update kong-migrations too
+        - refresh: True # ensure pkgrepo is up to date
         - force_yes: True
         - require:
+            - uninstall-old-kong
             - pkg: install-kong-deps
 
 # lsh, 2019-02-19: I have no idea what this file does. It's referenced in the init scripts
@@ -168,6 +173,21 @@ kong-db-exists:
         - require:
             - postgres_user: kong-db-user
 
+# new in 0.11.x: migrations must now be run manually
+kong-migrations:
+    cmd.run:
+        - name: |
+            set -e
+            service kong stop || echo "kong not running"
+            kong migrations up
+            touch /root/kong-migrations-0.11.2.flag
+            # service start? kong-service.service.running provides this
+        - unless:
+            - test -f /root/kong-migrations-0.11.2.flag
+        - require:
+            - kong-db-exists
+            - kong-db-user
+
 #
 #
 #
@@ -188,17 +208,18 @@ kong-service:
     service.running:
         - name: kong
         - enable: True
-        - sig: nginx # don't look for 'kong', look for 'nginx'
+        # don't look for 'kong', look for 'nginx -p /usr/local/kong'
+        - sig: nginx -p /usr/local/kong
         # supports reloading, but *some* config changes require a restart
         # change the interface from port 8000 to port 80 required a restart
         #- reload: True # disabled 2017-08-15. systemd+graceful reload not figured out yet
         - init_delay: 2 # kong needs a moment :(
         - require:
+            - kong-migrations
             - kong-upstart-script
             - kong-systemd-script
             - configure-kong-app
             - kong-ulimit-enable
-            - postgres_database: kong-db-exists
             - kong-api-calls-logs
         - watch:
             # reload if config changes
