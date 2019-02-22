@@ -83,8 +83,8 @@ install-kong:
 
     pkg.installed:
         - name: kong-community-edition
-        - version: 0.11.2
-        - refresh: True # ensures pkgrepo is up to date
+        - version: 0.11.2 # remember to update kong-migrations too
+        - refresh: True # ensure pkgrepo is up to date
         - force_yes: True
         - require:
             - uninstall-old-kong
@@ -151,15 +151,6 @@ kong-api-calls-logs:
         - recurse:
             - mode
 
-# kong-migrations:
-#    stop service (on all nodes?)
-#    run migrations
-#    $ kong migrations up
-#    $ touch /root/kong-migrations-[kong version].flag
-#    start service
-#    unless flag exists
-
-
 #
 # db
 #
@@ -181,6 +172,21 @@ kong-db-exists:
         - owner: {{ app.db.username }}
         - require:
             - postgres_user: kong-db-user
+
+# new in 0.11.x: migrations must now be run manually
+kong-migrations:
+    cmd.run:
+        - name: |
+            set -e
+            service kong stop || echo "kong not running"
+            kong migrations up
+            touch /root/kong-migrations-0.11.2.flag
+            # service start? kong-service.service.running provides this
+        - unless:
+            - test -f /root/kong-migrations-0.11.2.flag
+        - require:
+            - kong-db-exists
+            - kong-db-user
 
 #
 #
@@ -208,11 +214,11 @@ kong-service:
         #- reload: True # disabled 2017-08-15. systemd+graceful reload not figured out yet
         - init_delay: 2 # kong needs a moment :(
         - require:
+            - kong-migrations
             - kong-upstart-script
             - kong-systemd-script
             - configure-kong-app
             - kong-ulimit-enable
-            - postgres_database: kong-db-exists
             - kong-api-calls-logs
         - watch:
             # reload if config changes
