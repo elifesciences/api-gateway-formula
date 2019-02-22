@@ -208,7 +208,8 @@ kong-service:
     service.running:
         - name: kong
         - enable: True
-        - sig: nginx # don't look for 'kong', look for 'nginx'
+        # don't look for 'kong', look for 'nginx -p /usr/local/kong'
+        - sig: nginx -p /usr/local/kong
         # supports reloading, but *some* config changes require a restart
         # change the interface from port 8000 to port 80 required a restart
         #- reload: True # disabled 2017-08-15. systemd+graceful reload not figured out yet
