@@ -85,18 +85,25 @@ install-kong:
         - require:
             - pkg: install-kong-deps
 
-# lsh, 2019-02-19: I have no idea what this file does. It's referenced in the init scripts
+# TODO: remove once propagated
 kong-custom-nginx-configuration:
-    file.managed:
+    file.absent:
         - name: /etc/kong/nginx.lua
-        - source: salt://api-gateway/config/etc-kong-nginx.lua
-        - require:
-            - install-kong
 
+# TODO: remove once propagated
+kong-custom-nginx-configuration-1:
+    file.absent:
+        - name: /etc/kong/nginx_kong.lua
+
+# target the kong template directly
+# original file found can be found here given we're now overwriting it:
+#   https://raw.githubusercontent.com/Kong/kong/0.10.4/kong/templates/nginx_kong.lua
+# discussion about how everything is confusing and wrong here: 
+#   https://github.com/Kong/kong/issues/1699
 kong-custom-nginx-configuration-2:
     file.managed:
-        - name: /etc/kong/nginx_kong.lua
-        - source: salt://api-gateway/config/etc-kong-nginx_kong.lua
+        - name: /usr/local/share/lua/5.1/kong/templates/nginx_kong.lua
+        - source: salt://api-gateway/config/etc-kong-nginx_kong.lua # todo: update this filename
         - backup: minion
         - require:
             - install-kong
@@ -188,7 +195,8 @@ kong-service:
     service.running:
         - name: kong
         - enable: True
-        - sig: nginx # don't look for 'kong', look for 'nginx'
+        # don't look for 'kong', look for 'nginx -p /usr/local/kong'
+        - sig: nginx -p /usr/local/kong
         # supports reloading, but *some* config changes require a restart
         # change the interface from port 8000 to port 80 required a restart
         #- reload: True # disabled 2017-08-15. systemd+graceful reload not figured out yet
