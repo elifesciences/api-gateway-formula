@@ -51,22 +51,41 @@ install-kong-deps:
             - dnsmasq
             - procps
 
-install-kong:
+remove-old-kong-ppa:
     pkgrepo.absent:
         - name: deb https://dl.bintray.com/mashape/kong-ubuntu-trusty-0.9.x trusty main
 
+install-kong:
+    file.managed:
+        - name: /root/bintray.gpg
+        - source: salt://api-gateway/config/root-bintray.gpg
+        # disabled because of intermittant failures with bintray.com
+        #- source: https://bintray.com/user/downloadSubjectPublicKey?username=bintray
+
+    cmd.run:
+        - name: apt-key add /root/bintray.gpg
+        - require:
+            - file: install-kong
+
+    pkgrepo.managed:
+        {% if salt['grains.get']('oscodename') == 'xenial' %}
+        - name: deb https://kong.bintray.com/kong-community-edition-deb xenial main
+        {% else %}
+        - name: deb https://kong.bintray.com/kong-community-edition-deb trusty main
+        {% endif %}
+        - require:
+            - cmd: install-kong
+            - remove-old-kong-ppa
+
     pkg.installed:
-        #- name: kong
-        #- version: 0.9.5
-        #- refresh: True # ensures pkgrepo is up to date
+        - name: kong
+        - version: 0.10.4
+        - refresh: True # ensures pkgrepo is up to date
         - force_yes: True
-        - sources:
-            - kong: salt://api-gateway/files/kong-0.9.5.trusty_all.deb
-        #- unless:
-        #    - dpkg -l kong | grep kong
         - require:
             - pkg: install-kong-deps
 
+# lsh, 2019-02-19: I have no idea what this file does. It's referenced in the init scripts
 kong-custom-nginx-configuration:
     file.managed:
         - name: /etc/kong/nginx.lua
@@ -74,18 +93,22 @@ kong-custom-nginx-configuration:
         - require:
             - install-kong
 
-old-kong-conf-file:
-    # Kong 0.9.6 causes problems if /etc/kong/kong.conf exists and there is
-    # more than one nginx instance running
-    file.absent:
-        - name: /etc/kong/kong.conf
+kong-custom-nginx-configuration-2:
+    file.managed:
+        - name: /etc/kong/nginx_kong.lua
+        - source: salt://api-gateway/config/etc-kong-nginx_kong.lua
+        - backup: minion
+        - require:
+            - install-kong
 
 configure-kong-app:
     file.managed:
         # Kong 0.9.6 causes problems if /etc/kong/kong.conf exists and there is
         # more than one nginx instance running
-        - name: /etc/kong/custom-kong.conf
-        - source: salt://api-gateway/config/etc-kong-custom-kong.conf
+        # 2019-02-19: this doesn't appear to be a problem with 0.10.4
+        # custom-kong.conf renamed back to kong.conf
+        - name: /etc/kong/kong.conf
+        - source: salt://api-gateway/config/etc-kong-kong.conf
         - template: jinja
         - require:
             - pkg: install-kong
@@ -94,7 +117,6 @@ configure-kong-app:
             {% endif %}
             - kong-custom-nginx-configuration
 
-    
 kong-ulimit:
     file.append:
         # maximum file descriptors is 1024 and Kong complains about it not being optimal
@@ -181,6 +203,16 @@ kong-service:
         - watch:
             # reload if config changes
             - file: configure-kong-app
+
+kong-checks:
+    cmd.run:
+        - name: kong check && kong health
+        - require:
+            - kong-service
+
+#
+#
+#
 
 kong-logrotate:
     file.managed:

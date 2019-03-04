@@ -7,7 +7,7 @@ WantedBy=multi-user.target
 
 [Service]
 StandardError=syslog
-ExecStart=/usr/local/bin/kong start -c /etc/kong/custom-kong.conf --nginx-conf /etc/kong/nginx.lua
+ExecStart=/usr/local/bin/kong start --nginx-conf /etc/kong/nginx.lua
 Restart=on-failure
 
 # don't keep respawning if there are 10 respawns within 30 seconds
