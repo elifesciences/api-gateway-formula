@@ -68,11 +68,7 @@ install-kong:
             - file: install-kong
 
     pkgrepo.managed:
-        {% if salt['grains.get']('oscodename') == 'xenial' %}
-        - name: deb https://kong.bintray.com/kong-community-edition-deb xenial main
-        {% else %}
-        - name: deb https://kong.bintray.com/kong-community-edition-deb trusty main
-        {% endif %}
+        - name: deb https://kong.bintray.com/kong-community-edition-deb {{ salt['grains.get']('oscodename') }} main
         - require:
             - cmd: install-kong
             - remove-old-kong-ppa
@@ -86,6 +82,7 @@ install-kong:
             - pkg: install-kong-deps
 
 # TODO: remove once propagated
+# this file had nginx configuration in it but it was never being picked up. we target the kong template directly now
 kong-custom-nginx-configuration:
     file.absent:
         - name: /etc/kong/nginx.lua
