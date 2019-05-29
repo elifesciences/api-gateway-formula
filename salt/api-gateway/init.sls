@@ -1,4 +1,5 @@
 {% set app = pillar.api_gateway %}
+{% set osrelease = salt['grains.get']('osrelease') %}
 
 #
 # nginx proxy
@@ -45,7 +46,13 @@ proxy:
 install-kong-deps:
     pkg.installed:
         - pkgs:
+            {% if osrelease in ['14.04'] %}
             - netcat
+            {% else %}
+            # https://askubuntu.com/questions/346869/what-are-the-differences-between-netcat-traditional-and-netcat-openbsd
+            #- netcat-openbsd
+            - netcat-traditional
+            {% endif %}
             - openssl
             - libpcre3
             - dnsmasq
@@ -197,7 +204,7 @@ kong-service:
         # supports reloading, but *some* config changes require a restart
         # change the interface from port 8000 to port 80 required a restart
         #- reload: True # disabled 2017-08-15. systemd+graceful reload not figured out yet
-        - init_delay: 2 # kong needs a moment :(
+        - init_delay: 5 # kong needs a moment :(
         - require:
             - kong-upstart-script
             - kong-systemd-script
@@ -205,6 +212,9 @@ kong-service:
             - kong-ulimit-enable
             - postgres_database: kong-db-exists
             - kong-api-calls-logs
+            # require nginx to be running with the nginx->kong proxy configuration 
+            # before doing the api calls below
+            - proxy 
         - watch:
             # reload if config changes
             - file: configure-kong-app
