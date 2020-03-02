@@ -50,7 +50,7 @@ def _plugin(admin_api, api, name):
         return None
 
 def _plugin_config(params):
-    params_related_to_config = [param_key for param_key in params.keys() if re.match(r"^config\..+", param_key)]
+    params_related_to_config = [param_key for param_key in list(params.keys()) if re.match(r"^config\..+", param_key)]
     _strip_config_prefix = lambda key: re.sub(r"^config\.", "", key)
     return {_strip_config_prefix(param_key): params[param_key] for param_key in params_related_to_config}
 
@@ -105,6 +105,9 @@ def _get(admin_api, path):
     url = admin_api + path
     logger.info("Request: GET %s\n" % url)
     response = requests.get(url)
+    if response.content:
+        # requests in python3 return bytes, not strings
+        response.content = response.content.decode('utf-8')
     _log_response(response)
     return response
 
