@@ -42,7 +42,7 @@ def post_plugin(name, api, admin_api, params={}):
 def _plugin(admin_api, api, name):
     response = _get(admin_api, "/apis/" + api + "/plugins")
     assert response.status_code in [200], "Strange response code: %s" % response
-    matching = [plugin for plugin in json.loads(response.content)['data'] if plugin['name'] == name]
+    matching = [plugin for plugin in json.loads(response.content.decode('utf-8'))['data'] if plugin['name'] == name]
     assert len(matching) <= 1
     if len(matching):
         return matching[0]
@@ -50,7 +50,7 @@ def _plugin(admin_api, api, name):
         return None
 
 def _plugin_config(params):
-    params_related_to_config = [param_key for param_key in params.keys() if re.match(r"^config\..+", param_key)]
+    params_related_to_config = [param_key for param_key in list(params.keys()) if re.match(r"^config\..+", param_key)]
     _strip_config_prefix = lambda key: re.sub(r"^config\.", "", key)
     return {_strip_config_prefix(param_key): params[param_key] for param_key in params_related_to_config}
 
@@ -67,7 +67,7 @@ def post_key(name, admin_api, key):
 def _key_exists(admin_api, name, key):
     response = _get(admin_api, "/consumers/" + name + "/key-auth/")
     assert response.status_code == 200, "Strange response code: %s" % response
-    keys = [k['key'] for k in json.loads(response.content)['data']]
+    keys = [k['key'] for k in json.loads(response.content.decode('utf-8'))['data']]
     return key in keys
 
 def post_acl(name, admin_api, group):
@@ -85,7 +85,7 @@ def delete_acl(name, group, admin_api):
 def _acl_exists(admin_api, name, group):
     response = _get(admin_api, "/consumers/" + name + "/acls")
     assert response.status_code in [200], "Strange response code: %s" % response
-    return group in [acl['group'] for acl in json.loads(response.content)['data']]
+    return group in [acl['group'] for acl in json.loads(response.content.decode('utf-8'))['data']]
 
 def delete_consumer(name, admin_api):
     response = _delete(admin_api, "/consumers/" + name)
@@ -132,7 +132,7 @@ def _delete(admin_api, path):
     return response
 
 def _log_response(response):
-    logger.info("Response: %d\n%s\n" % (response.status_code, response.content))
+    logger.info("Response: %d\n%s\n" % (response.status_code, response.content.decode('utf-8')))
 
 def _ret_of_post(response, name, expected_status_codes=None):
     if not expected_status_codes:
