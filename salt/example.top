@@ -5,3 +5,4 @@ base:
         - elife.nginx
         - elife.nginx-error-pages
         - api-gateway
+        - api-gateway.kong

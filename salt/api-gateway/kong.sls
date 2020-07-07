@@ -8,21 +8,13 @@
 install-kong-deps:
     pkg.installed:
         - pkgs:
-            {% if osrelease in ['14.04'] %}
-            - netcat
-            {% else %}
             # https://askubuntu.com/questions/346869/what-are-the-differences-between-netcat-traditional-and-netcat-openbsd
             #- netcat-openbsd
             - netcat-traditional
-            {% endif %}
             - openssl
             - libpcre3
             - dnsmasq
             - procps
-
-remove-old-kong-ppa:
-    pkgrepo.absent:
-        - name: deb https://dl.bintray.com/mashape/kong-ubuntu-trusty-0.9.x trusty main
 
 install-kong:
     file.managed:
@@ -40,7 +32,6 @@ install-kong:
         - name: deb https://kong.bintray.com/kong-community-edition-deb {{ salt['grains.get']('oscodename') }} main
         - require:
             - cmd: install-kong
-            - remove-old-kong-ppa
 
     pkg.installed:
         - name: kong
@@ -49,17 +40,6 @@ install-kong:
         - force_yes: True
         - require:
             - pkg: install-kong-deps
-
-# TODO: remove once propagated
-# this file had nginx configuration in it but it was never being picked up. we target the kong template directly now
-kong-custom-nginx-configuration:
-    file.absent:
-        - name: /etc/kong/nginx.lua
-
-# TODO: remove once propagated
-kong-custom-nginx-configuration-1:
-    file.absent:
-        - name: /etc/kong/nginx_kong.lua
 
 # target the kong template directly
 # original file found can be found here given we're now overwriting it:
@@ -88,7 +68,6 @@ configure-kong-app:
             {% if salt['elife.cfg']('cfn.outputs.DomainName') %}
             - web-ssl-enabled
             {% endif %}
-            - kong-custom-nginx-configuration
 
 kong-ulimit:
     file.append:
