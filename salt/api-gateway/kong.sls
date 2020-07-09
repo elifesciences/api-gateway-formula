@@ -2,104 +2,7 @@
 {% set osrelease = salt['grains.get']('osrelease') %}
 
 #
-# kong
-#
-
-install-kong-deps:
-    pkg.installed:
-        - pkgs:
-            # https://askubuntu.com/questions/346869/what-are-the-differences-between-netcat-traditional-and-netcat-openbsd
-            #- netcat-openbsd
-            - netcat-traditional
-            - openssl
-            - libpcre3
-            - dnsmasq
-            - procps
-
-install-kong:
-    file.managed:
-        - name: /root/bintray.gpg
-        - source: salt://api-gateway/config/root-bintray.gpg
-        # disabled because of intermittant failures with bintray.com
-        #- source: https://bintray.com/user/downloadSubjectPublicKey?username=bintray
-
-    cmd.run:
-        - name: apt-key add /root/bintray.gpg
-        - require:
-            - file: install-kong
-
-    pkgrepo.managed:
-        - name: deb https://kong.bintray.com/kong-community-edition-deb {{ salt['grains.get']('oscodename') }} main
-        - require:
-            - cmd: install-kong
-
-    pkg.installed:
-        - name: kong
-        - version: 0.10.4
-        - refresh: True # ensures pkgrepo is up to date
-        - force_yes: True
-        - require:
-            - pkg: install-kong-deps
-
-# target the kong template directly
-# original file found can be found here given we're now overwriting it:
-#   https://raw.githubusercontent.com/Kong/kong/0.10.4/kong/templates/nginx_kong.lua
-# discussion about how everything is confusing and wrong here: 
-#   https://github.com/Kong/kong/issues/1699
-kong-custom-nginx-configuration-2:
-    file.managed:
-        - name: /usr/local/share/lua/5.1/kong/templates/nginx_kong.lua
-        - source: salt://api-gateway/config/etc-kong-nginx_kong.lua # todo: update this filename
-        - backup: minion
-        - require:
-            - install-kong
-
-configure-kong-app:
-    file.managed:
-        # Kong 0.9.6 causes problems if /etc/kong/kong.conf exists and there is
-        # more than one nginx instance running
-        # 2019-02-19: this doesn't appear to be a problem with 0.10.4
-        # custom-kong.conf renamed back to kong.conf
-        - name: /etc/kong/kong.conf
-        - source: salt://api-gateway/config/etc-kong-kong.conf
-        - template: jinja
-        - require:
-            - pkg: install-kong
-            {% if salt['elife.cfg']('cfn.outputs.DomainName') %}
-            - web-ssl-enabled
-            {% endif %}
-
-kong-ulimit:
-    file.append:
-        # maximum file descriptors is 1024 and Kong complains about it not being optimal
-        - name: /etc/security/limits.conf
-        - text:
-            - "* soft nofile 4096"
-            - "* hard nofile 4096"
-            - root soft nofile 4096
-            - root hard nofile 4096
-        - require: 
-            - configure-kong-app
-
-kong-ulimit-enable:
-    file.append:
-        - name: /etc/pam.d/su
-        - text:
-            - session required pam_limits.so
-        - require:
-            - kong-ulimit
-            
-kong-api-calls-logs:
-    file.directory:
-        - name: /var/log/kong
-        - user: nobody
-        - group: root
-        - dir_mode: 755
-        - recurse:
-            - mode
-
-#
-# db
+# kong db
 #
 
 kong-db-user:
@@ -121,50 +24,135 @@ kong-db-exists:
             - postgres_user: kong-db-user
 
 #
-#
+# old kong, config (removal)
 #
 
-kong-upstart-script:
+# target the kong template directly
+# original file found can be found here given we're now overwriting it:
+#   https://raw.githubusercontent.com/Kong/kong/0.10.4/kong/templates/nginx_kong.lua
+# discussion about how everything is confusing and wrong here: 
+#   https://github.com/Kong/kong/issues/1699
+kong-custom-nginx-configuration-2:
+    file.absent:
+        - name: /usr/local/share/lua/5.1/kong/templates/nginx_kong.lua
+
+configure-kong-app:
+    file.absent:
+        - name: /etc/kong/kong.conf
+
+#
+# new kong, config (container)
+#
+
+kong-config-dir:
+    file.directory:
+        - user: {{ pillar.elife.deploy_user.username }}
+        - name: /opt/kong
+        - makedirs: True
+
+# target the kong template directly
+# original file found can be found here given we're now overwriting it:
+#   https://raw.githubusercontent.com/Kong/kong/0.10.4/kong/templates/nginx_kong.lua
+# discussion about how everything is confusing and wrong here: 
+#   https://github.com/Kong/kong/issues/1699
+kong-config-nginx+lua:
     file.managed:
-        - name: /etc/init/kong.conf
-        - source: salt://api-gateway/config/etc-init-kong.conf
-        - template: jinja
+        - name: /opt/kong/nginx_kong.lua
+        - source: salt://api-gateway/config/etc-kong-nginx_kong.lua # todo: update this filename
+        - backup: minion
+        - require:
+            - kong-config-dir
 
+kong-config:
+    file.managed:
+        - name: /opt/kong/kong.conf
+        - source: salt://api-gateway/config/etc-kong-kong.conf
+        - template: jinja
+        - require:
+            - kong-config-dir
+
+kong-docker-compose:
+    file.managed:
+        - name: /opt/kong/docker-compose.yaml
+        - source: salt://api-gateway/config/opt-kong-docker-compose.yaml
+        - template: jinja
+        - require:
+            - kong-config-dir
+
+kong-api-calls-logs:
+    file.directory:
+        - name: /var/log/kong
+        - user: nobody
+        - group: root
+        - dir_mode: 755
+        - recurse:
+            - mode
+
+#
+# old kong, kong service (disable)
+#
+
+# TODO: remove
 kong-systemd-script:
     file.managed:
         - name: /lib/systemd/system/kong.service
         - source: salt://api-gateway/config/lib-systemd-system-kong.service
         - template: jinja
 
+# TODO: remove
 kong-service:
-    service.running:
+    service.dead:
         - name: kong
-        - enable: True
+        - enable: False
         # don't look for 'kong', look for 'nginx -p /usr/local/kong'
         - sig: nginx -p /usr/local/kong
-        # supports reloading, but *some* config changes require a restart
-        # change the interface from port 8000 to port 80 required a restart
-        #- reload: True # disabled 2017-08-15. systemd+graceful reload not figured out yet
+
+#
+# new kong, container service
+# 
+
+{% if pillar.elife.env == "dev" %}
+
+# good for development.
+# just clone or move the 'kong-container' repository into the root of your builder installation.
+build-kong:
+    docker_image.present:
+        - name: elifesciences/kong
+        - tag: latest
+        - build: /vagrant/kong-container
+        - force: true
+        - require_in:
+            - service: kong-container-service
+        - watch_in:
+            - service: kong-container-service
+        - onlyif:
+            - test -e /vagrant/kong-container/Dockerfile
+
+{% endif %}
+
+kong-container-service:
+    file.managed:
+        - name: /lib/systemd/system/kong-container.service
+        - source: salt://api-gateway/config/lib-systemd-system-kong-container.service
+        - template: jinja
+
+    service.running:
+        - name: kong-container
+        - enable: True
         - init_delay: 5 # kong needs a moment :(
         - require:
-            - kong-upstart-script
-            - kong-systemd-script
-            - configure-kong-app
-            - kong-ulimit-enable
-            - postgres_database: kong-db-exists
+            - proxy
+            - service: kong-service # old kong service must be stopped
+            - file: kong-container-service
+            - kong-docker-compose
+            - kong-config-nginx+lua
+            - kong-config
+            - kong-db-exists
             - kong-api-calls-logs
-            # require nginx to be running with the nginx->kong proxy configuration 
-            # before doing the api calls below
-            - proxy 
         - watch:
-            # reload if config changes
-            - file: configure-kong-app
-
-kong-checks:
-    cmd.run:
-        - name: kong check && kong health
-        - require:
-            - kong-service
+            - kong-docker-compose
+            - kong-config
+            - kong-config-nginx+lua
 
 #
 #
@@ -182,7 +170,7 @@ kong-syslog-ng-for-nginx-logs:
         - template: jinja
         - require:
             - syslog-ng
-            - kong-service 
+            - kong-container-service 
         - listen_in:
             - service: syslog-ng
 
@@ -196,7 +184,7 @@ remove-api-endpoint-{{ name }}:
         - name: {{ name }}
         - admin_api: {{ app.admin }}
         - require:
-            - service: kong-service
+            - service: kong-container-service
 {% endfor %}
 
 {% for name, params in app.endpoints.items() %}
@@ -206,7 +194,7 @@ add-api-endpoint-{{ name }}:
         - admin_api: {{ app.admin }}
         - params: {{ params }}
         - require:
-            - service: kong-service
+            - service: kong-container-service
 {% endfor %}
         
 
@@ -226,7 +214,7 @@ add-plugin-{{ plugin }}-for-{{ endpoint }}:
         - admin_api: {{ app.admin }}
         - params: {{ params }}
         - require:
-            - service: kong-service
+            - service: kong-container-service
             - add-api-endpoint-{{ endpoint }}
         - require_in:
             - cmd: all-plugins-installed
@@ -250,7 +238,7 @@ remove-consumer-{{ name }}:
         - name: {{ name }}
         - admin_api: {{ app.admin }}
         - require:
-            - service: kong-service
+            - service: kong-container-service
 {% endfor %}
 
 

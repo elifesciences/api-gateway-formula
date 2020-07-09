@@ -1,0 +1,24 @@
+[Unit]
+Description=kong container service
+Requires=docker.service
+Requires=postgresql.service
+After=docker.service
+After=postgresql.service
+Before=nginx.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+# "Configures the time to wait for start-up. If a daemon service does not signal start-up completion within the configured time, the service will be considered failed and will be shut down again."
+#  - https://www.freedesktop.org/software/systemd/man/systemd.service.html#TimeoutStartSec=
+TimeoutStartSec=0
+WorkingDirectory=/opt/kong
+ExecStart=/usr/local/bin/docker-compose up --detach
+ExecStop=/usr/local/bin/docker-compose down
+# "...the service manager will consider the unit up after the main process exits. 
+# RemainAfterExit= is particularly useful for this type of service. 
+# Note that if this option is used without RemainAfterExit= the service will never enter "active" unit state, but directly transition from "activating" to "deactivating" or "dead""
+#   - https://www.freedesktop.org/software/systemd/man/systemd.service.html#Type=
+Type=oneshot
+RemainAfterExit=true
