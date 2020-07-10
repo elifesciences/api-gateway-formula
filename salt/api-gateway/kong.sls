@@ -111,6 +111,13 @@ kong-service:
 # new kong, container service
 # 
 
+get-kong:
+    docker_image.present:
+        - name: elifesciences/kong:latest
+        - force: true # always check remote
+        - require:
+            - docker-ready
+
 {% if pillar.elife.env == "dev" %}
 
 # good for development.
@@ -144,6 +151,7 @@ kong-container-service:
             - proxy
             - service: kong-service # old kong service must be stopped
             - file: kong-container-service
+            - get-kong
             - kong-docker-compose
             - kong-config-nginx+lua
             - kong-config
