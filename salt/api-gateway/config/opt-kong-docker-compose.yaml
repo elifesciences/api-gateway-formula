@@ -1,7 +1,7 @@
 version: '3.7'
 services:
     kong:
-        image: "elifesciences/kong:latest"
+        image: "elifesciences/kong:{{ pillar.api_gateway.kong_container.image_tag }}"
         hostname: {{ salt['elife.cfg']('project.full_hostname') }} # "prod--gateway.elifesciences.org"
         environment:
             NEW_RELIC_ENABLED: "{{ pillar.elife.newrelic.enabled }}"
@@ -10,7 +10,7 @@ services:
             options:
                 # use 'kong' instead of (obscure) process ID
                 tag: "kong"
-        # so we can access 'localhost' for postgresql
+        # so we can access 'localhost' for postgresql on port 5432
         network_mode: "host"
         ports:
             - "8000:8000" # kong

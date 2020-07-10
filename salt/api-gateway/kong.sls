@@ -113,7 +113,7 @@ kong-service:
 
 get-kong:
     docker_image.present:
-        - name: elifesciences/kong:latest
+        - name: elifesciences/kong:{{ pillar.api_gateway.kong_container.image_tag }}
         - force: true # always check remote
         - require:
             - docker-ready
@@ -125,7 +125,8 @@ get-kong:
 build-kong:
     docker_image.present:
         - name: elifesciences/kong
-        - tag: latest
+        # if env == dev then this is 'latest' by default
+        - tag: {{ pillar.api_gateway.kong_container.image_tag }}
         - build: /vagrant/kong-container
         - force: true
         - require_in:
