@@ -5,5 +5,6 @@ base:
         - elife.postgresql
         - elife.nginx
         - elife.nginx-error-pages
-        - api-gateway
+        #- api-gateway
+        - api-gateway.proxy
         - api-gateway.kong
