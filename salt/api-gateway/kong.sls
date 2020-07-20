@@ -94,7 +94,7 @@ kong-api-calls-logs:
 
 # TODO: remove
 kong-systemd-script:
-    file.managed:
+    file.absent:
         - name: /lib/systemd/system/kong.service
         - source: salt://api-gateway/config/lib-systemd-system-kong.service
         - template: jinja
