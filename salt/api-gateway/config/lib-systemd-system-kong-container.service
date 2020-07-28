@@ -1,0 +1,17 @@
+[Unit]
+Description=kong container service
+Requires=docker.service
+Requires=postgresql.service
+After=docker.service
+After=postgresql.service
+Before=nginx.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Restart=always
+WorkingDirectory=/opt/kong
+ExecStartPre=/usr/local/bin/docker-compose down
+ExecStart=/usr/local/bin/docker-compose up
+ExecStop=/usr/local/bin/docker-compose down

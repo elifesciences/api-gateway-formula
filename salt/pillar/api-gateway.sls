@@ -2,6 +2,9 @@ api_gateway:
 
     admin: http://localhost:8001
 
+    kong_container:
+        image_tag: latest
+
     db:
         engine: postgres
         host: "127.0.0.1"
