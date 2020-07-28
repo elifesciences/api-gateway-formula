@@ -113,7 +113,8 @@ kong-service:
 
 get-kong:
     docker_image.present:
-        - name: elifesciences/kong:{{ pillar.api_gateway.kong_container.image_tag }}
+        - name: elifesciences/kong
+        - tag: {{ pillar.api_gateway.kong_container.image_tag }}
         - force: true # always check remote
         - require:
             - docker-ready
