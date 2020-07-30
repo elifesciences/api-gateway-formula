@@ -1,6 +1,6 @@
 /usr/local/kong/logs/*.log {
     daily
-    rotate 3
+    rotate 2
     dateext
     notifempty
     missingok
@@ -10,7 +10,7 @@
 
 /var/log/kong/*.log {
     daily
-    rotate 3
+    rotate 2
     dateext
     notifempty
     missingok
