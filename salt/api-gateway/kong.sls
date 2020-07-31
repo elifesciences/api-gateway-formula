@@ -147,7 +147,7 @@ kong-container-service:
     service.running:
         - name: kong-container
         - enable: True
-        - init_delay: 5 # kong needs a moment :(
+        - init_delay: 7 # kong needs a moment :(
         - require:
             - proxy
             - service: kong-service # old kong service must be stopped
