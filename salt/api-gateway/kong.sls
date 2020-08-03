@@ -147,7 +147,7 @@ kong-container-service:
     service.running:
         - name: kong-container
         - enable: True
-        - init_delay: 7 # kong needs a moment :(
+        - init_delay: 10 # kong needs a moment :(
         - require:
             - proxy
             - service: kong-service # old kong service must be stopped
@@ -179,7 +179,6 @@ kong-syslog-ng-for-nginx-logs:
         - template: jinja
         - require:
             - syslog-ng
-            - kong-container-service 
         - listen_in:
             - service: syslog-ng
 
@@ -223,7 +222,7 @@ add-plugin-{{ plugin }}-for-{{ endpoint }}:
         - admin_api: {{ app.admin }}
         - params: {{ params }}
         - require:
-            - service: kong-container-service
+            - kong-container-service
             - add-api-endpoint-{{ endpoint }}
         - require_in:
             - cmd: all-plugins-installed
@@ -247,7 +246,7 @@ remove-consumer-{{ name }}:
         - name: {{ name }}
         - admin_api: {{ app.admin }}
         - require:
-            - service: kong-container-service
+            - kong-container-service
 {% endfor %}
 
 
