@@ -1,1 +1,1 @@
-elifeFormula('api-gateway', '', null, ['s1804'])
+elifeFormula('api-gateway', '', null, ['snsalt'])
