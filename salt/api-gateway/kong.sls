@@ -82,6 +82,16 @@ kong-docker-compose:
 kong-api-calls-logs:
     file.directory:
         - name: /var/log/kong
+        - makedirs: true
+        - user: nobody
+        - group: root
+        - dir_mode: 755
+        - recurse:
+            - mode
+
+kong-admin-calls-logs:
+    file.directory:
+        - name: /usr/local/kong/logs
         - user: nobody
         - group: root
         - dir_mode: 755
@@ -158,6 +168,7 @@ kong-container-service:
             - kong-config
             - kong-db-exists
             - kong-api-calls-logs
+            - kong-admin-calls-logs
         - watch:
             - kong-docker-compose
             - kong-config
