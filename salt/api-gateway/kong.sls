@@ -95,6 +95,8 @@ kong-admin-calls-logs:
         - user: nobody
         - group: root
         - dir_mode: 755
+        # directory doesn't exist post-containerisation on fresh builds, however other config still expects it there
+        - makedirs: true 
         - recurse:
             - mode
 
