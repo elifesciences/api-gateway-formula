@@ -23,3 +23,4 @@ services:
             # directories (host:container)
             # these paths are specified in `loris2.conf`
             - /var/log/kong:/var/log/kong
+            - /usr/local/kong/logs:/usr/local/kong/logs
