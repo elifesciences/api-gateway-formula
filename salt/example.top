@@ -1,7 +1,7 @@
 base:
     '*':
         - elife
-        - elife.docker
+        - elife.docker-native
         - elife.postgresql
         - elife.nginx
         - elife.nginx-error-pages
