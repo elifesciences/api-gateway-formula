@@ -164,7 +164,7 @@ kong-api-calls-logs:
 kong-db-user:
     postgres_user.present:
         - name: {{ app.db.username }}
-        - encrypted: True
+        - encrypted: scram-sha-256
         - password: {{ app.db.password }}
         - refresh_password: True
         
