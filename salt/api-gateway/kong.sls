@@ -101,26 +101,44 @@ kong-admin-calls-logs:
             - mode
 
 #
-# old kong, kong service (disable)
+# logging
 #
 
-# TODO: remove
-kong-systemd-script:
-    file.absent:
-        - name: /lib/systemd/system/kong.service
-        - source: salt://api-gateway/config/lib-systemd-system-kong.service
+kong-logrotate:
+    file.managed:
+        - name: /etc/logrotate.d/kong
+        - source: salt://api-gateway/config/etc-logrotate.d-kong
+
+kong-syslog-ng-for-nginx-logs:
+    file.managed:
+        - name: /etc/syslog-ng/conf.d/kong.conf
+        - source: salt://api-gateway/config/etc-syslog-ng-conf.d-kong.conf
         - template: jinja
+        - require:
+            - syslog-ng
+        - listen_in:
+            - service: syslog-ng
 
-# TODO: remove
-kong-service:
-    service.dead:
-        - name: kong
-        - enable: False
-        # don't look for 'kong', look for 'nginx -p /usr/local/kong'
-        - sig: nginx -p /usr/local/kong
+# lsh@2023-01-17: moves kong logs in to /var as logrotate 
+# can't rotate logs in /usr because of systemd sandboxing.
+# temporary, remove once all environments updated.
+kong-mv-usr-share-logs:
+    cmd.run:
+        - name: |
+            systemctl stop kong-container
+            rm -rf /var/log/usr-local-kong-logs
+            mkdir -p /usr/local/kong/logs
+            mv /usr/local/kong/logs /var/log/usr-local-kong-logs
+            cd /usr/local/kong
+            ln -s /var/log/usr-local-kong-logs logs
+            systemctl start kong-container
+        - unless:
+            # /usr/local/kong/logs is already a symlink
+            - test -h /usr/local/kong/logs
+
 
 #
-# new kong, container service
+# kong container service
 # 
 
 get-kong:
@@ -162,7 +180,6 @@ kong-container-service:
         - init_delay: 10 # kong needs a moment :(
         - require:
             - proxy
-            - service: kong-service # old kong service must be stopped
             - file: kong-container-service
             - get-kong
             - kong-docker-compose
@@ -171,29 +188,11 @@ kong-container-service:
             - kong-db-exists
             - kong-api-calls-logs
             - kong-admin-calls-logs
+            - kong-mv-usr-share-logs
         - watch:
             - kong-docker-compose
             - kong-config
             - kong-config-nginx+lua
-
-#
-#
-#
-
-kong-logrotate:
-    file.managed:
-        - name: /etc/logrotate.d/kong
-        - source: salt://api-gateway/config/etc-logrotate.d-kong
-
-kong-syslog-ng-for-nginx-logs:
-    file.managed:
-        - name: /etc/syslog-ng/conf.d/kong.conf
-        - source: salt://api-gateway/config/etc-syslog-ng-conf.d-kong.conf
-        - template: jinja
-        - require:
-            - syslog-ng
-        - listen_in:
-            - service: syslog-ng
 
 #
 # remove API endpoints, add the new ones
