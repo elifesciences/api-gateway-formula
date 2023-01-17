@@ -125,13 +125,13 @@ kong-syslog-ng-for-nginx-logs:
 kong-mv-usr-share-logs:
     cmd.run:
         - name: |
-            systemctl stop kong-container
+            test -f /lib/systemd/system/kong-container.service && systemctl stop kong-container
             rm -rf /var/log/usr-local-kong-logs
             mkdir -p /usr/local/kong/logs
             mv /usr/local/kong/logs /var/log/usr-local-kong-logs
             cd /usr/local/kong
             ln -s /var/log/usr-local-kong-logs logs
-            systemctl start kong-container
+            test -f /lib/systemd/system/kong-container.service && systemctl start kong-container
         - unless:
             # /usr/local/kong/logs is already a symlink
             - test -h /usr/local/kong/logs
