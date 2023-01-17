@@ -130,7 +130,8 @@ kong-mv-usr-share-logs:
             mv /usr/local/kong/logs /var/log/usr-local-kong-logs
             cd /usr/local/kong
             ln -s /var/log/usr-local-kong-logs logs
-            test -f /lib/systemd/system/kong-container.service && systemctl start kong-container
+            # unnecessary as kong-mv-usr-share-logs is a dependency of kong-container-service
+            #test -f /lib/systemd/system/kong-container.service && systemctl start kong-container
             exit 0
         - unless:
             # /usr/local/kong/logs is already a symlink
