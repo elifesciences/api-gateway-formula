@@ -121,7 +121,6 @@ kong-syslog-ng-for-nginx-logs:
 
 # lsh@2023-01-17: moves kong logs in to /var as logrotate 
 # can't rotate logs in /usr because of systemd sandboxing.
-# temporary, remove once all environments updated.
 kong-mv-usr-share-logs:
     cmd.run:
         - name: |
@@ -132,6 +131,7 @@ kong-mv-usr-share-logs:
             cd /usr/local/kong
             ln -s /var/log/usr-local-kong-logs logs
             test -f /lib/systemd/system/kong-container.service && systemctl start kong-container
+            exit 0
         - unless:
             # /usr/local/kong/logs is already a symlink
             - test -h /usr/local/kong/logs
