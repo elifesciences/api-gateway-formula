@@ -2,7 +2,7 @@ base:
     '*':
         - elife
         - elife.docker-native
-        - elife.postgresql-11
+        - elife.postgresql-12
         - elife.nginx
         - elife.nginx-error-pages
         - api-gateway.proxy
