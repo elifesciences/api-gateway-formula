@@ -1,4 +1,4 @@
-/usr/local/kong/logs/*.log {
+/var/log/usr-local-kong-logs/*.log {
     daily
     rotate 2
     dateext
