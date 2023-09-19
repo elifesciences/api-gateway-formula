@@ -3,8 +3,6 @@ services:
     kong:
         image: "elifesciences/kong:{{ pillar.api_gateway.kong_container.image_tag }}"
         hostname: {{ salt['elife.cfg']('project.full_hostname') }} # "prod--gateway.elifesciences.org"
-        environment:
-            NEW_RELIC_ENABLED: "{{ pillar.elife.newrelic.enabled }}"
         logging: # https://docs.docker.com/compose/compose-file/#logging
             driver: journald
             options:
