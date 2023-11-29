@@ -1,0 +1,88 @@
+
+(certs) {
+    tls /etc/certificates/certificate.chained.crt /etc/certificates/privkey.pem
+}
+
+(config) {
+
+    # shortcuts to /documentations/
+    # do not cache them for now, because:
+    # - it's a mess to debug
+    # - there is no Vary: Host so CDN may use them to
+    #   answer to requests for another host
+    / {
+        header Cache-Control "must-revalidate, no-cache, no-store, private"
+        redir /documentation/ 301
+    }
+
+    /documentation {
+        header Cache-Control "must-revalidate, no-cache, no-store, private"
+        redir /documentation/ 301
+    }
+
+    /documentation/ {
+        file_server {
+            root /srv/api-raml/dist
+            index index.html
+            header Cache-Control "public, max-age=3600"
+        }
+    }
+    
+    /ping {
+        # lsh@2023-11-03: disabled to reduce Loggly spam. #8531
+        log output "discard"
+        header Cache-Control "must-revalidate, no-cache, no-store, private"
+        header Content-Type "text/plain; charset=UTF-8"
+        respond "pong" 200
+    }
+
+    /ping-fastly {
+        # lsh@2023-11-03: disabled to reduce Loggly spam. #8531
+        log output "discard"
+        header Cache-Control "must-revalidate, no-cache, no-store, private"
+        header Content-Type "text/plain; charset=UTF-8"
+        respond "pong" 200
+    }
+
+    # kong
+    reverse_proxy {
+        to http://localhost:8000
+        transport http {
+            # Caddy automatically sets the X-Forwarded-For header to prevent spoofing.
+            # however! we *want* our CDN to set this header and then have Caddy pass it through unmodified.
+            # TODO: set: servers > trusted_proxies 'global option'
+            # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#defaults
+            #  header_up X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+
+    (error-pages)
+
+    # TODO: do these log rules apply to config *above* it ...?
+    log {
+        output file /var/log/caddy/access.log {
+            # see /etc/logrotate.d/caddy
+            roll_disabled
+        }
+        format json {
+            time_format rfc3339
+        }
+    }
+}
+
+{% set h1 = salt['elife.cfg']('project.project_hostname') %}{# bp.elifesciences.org -#}
+{% set h2 = salt['elife.cfg']('project.full_hostname') %}{# prod--bp.elifesciences.org -#}
+{% set h3 = salt['elife.cfg']('project.int_project_hostname') %}{# bp.elife.internal -#}
+{% set h4 = salt['elife.cfg']('project.int_full_hostname') %}{# prod--bp.elife.internal -#}
+
+http://localhost http://127.0.0.1 {% if h3 %}http://{{ h3 }} {% endif %}{% if h4 %}http://{{ h4 }} {% endif %}{
+    import config
+}
+
+{% if salt['elife.cfg']('cfn.outputs.DomainName') -%}
+{% if h1 %}https://{{ h1 }} {% endif %}{% if h2 %}https://{{ h2 }} {% endif %}{
+    import certs
+    import config
+}
+{% endif %}
+

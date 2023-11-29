@@ -1,7 +1,3 @@
-
-# nginx proxy
-# this instance sits in front of kong and proxies all requests back and forth
-
 api-documentation:
     git.latest:
         - name: git@github.com:elifesciences/api-raml.git
@@ -23,6 +19,27 @@ api-documentation:
         - require:
             - git: api-documentation
 
+{% if pillar.elife.webserver.app == "caddy" %}
+
+# caddy proxy
+# this instance sits in front of kong and proxies all requests back and forth
+
+proxy:
+    file.managed:
+        - name: /etc/caddy/sites.d/api-gateway
+        - source: salt://api-gateway/config/etc-caddy-sites.d-api-gateway
+        - makedirs: True
+        - template: jinja
+        - require:
+            - api-documentation
+        - watch_in:
+            - service: caddy-server-service
+
+{% else %}
+
+# nginx proxy
+# this instance sits in front of kong and proxies all requests back and forth
+
 proxy:
     file.managed:
         - name: /etc/nginx/sites-enabled/proxy.conf
@@ -33,3 +50,5 @@ proxy:
             - api-documentation
         - watch_in:
             - service: nginx-server-service
+
+{% endif %}
