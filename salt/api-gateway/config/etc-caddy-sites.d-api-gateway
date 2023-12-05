@@ -27,7 +27,7 @@
             header Cache-Control "public, max-age=3600"
         }
     }
-    
+
     /ping {
         # lsh@2023-11-03: disabled to reduce Loggly spam. #8531
         log output "discard"
@@ -48,17 +48,36 @@
     reverse_proxy {
         to http://localhost:8000
         transport http {
+
+            # nginx:
+            # "When buffering is disabled, the response is passed to a client synchronously, immediately as it is received. 
+            # nginx will not try to read the whole response from the proxied server."
+            # - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering
+            # proxy_buffering off;
+            #
+            # caddy:
+            # "By default, the proxy partially buffers the response for wire efficiency."
+            # "flush_interval is a duration value that adjusts how often Caddy should flush the response buffer to the client.
+            # By default, no periodic flushing is done. A negative value (typically -1) suggests "low-latency mode" which 
+            # disables response buffering completely and flushes immediately after each write to the client, ..."
+            # there are caveats when this option is ignored however!
+            # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#streaming
+            # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#flush_interval
+            flush_interval -1
+
+            # - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#var_proxy_add_x_forwarded_for
+            # proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            #
             # Caddy automatically sets the X-Forwarded-For header to prevent spoofing.
-            # however! we *want* our CDN to set this header and then have Caddy pass it through unmodified.
-            # TODO: set: servers > trusted_proxies 'global option'
+            # however! we *expect* our CDN to set this header. We then want Caddy to pass it through unmodified.
+            # see: /etc/caddy/conf.d/trusted-proxy-ip-ranges
             # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#defaults
-            #  header_up X-Forwarded-For $proxy_add_x_forwarded_for;
         }
     }
 
     (error-pages)
 
-    # TODO: do these log rules apply to config *above* it ...?
+    # "The log directive applies to the host/port of the site block it appears in, not any other part of the site address (e.g. path)."
     log {
         output file /var/log/caddy/access.log {
             # see /etc/logrotate.d/caddy
