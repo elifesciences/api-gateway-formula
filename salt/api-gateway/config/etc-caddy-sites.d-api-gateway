@@ -10,74 +10,43 @@
     # - it's a mess to debug
     # - there is no Vary: Host so CDN may use them to
     #   answer to requests for another host
-    / {
+    handle / {
         header Cache-Control "must-revalidate, no-cache, no-store, private"
         redir /documentation/ 301
     }
 
-    /documentation {
+    handle /documentation {
         header Cache-Control "must-revalidate, no-cache, no-store, private"
         redir /documentation/ 301
     }
 
-    /documentation/ {
+    handle /documentation/ {
+        header Cache-Control "public, max-age=3600"
         file_server {
             root /srv/api-raml/dist
             index index.html
-            header Cache-Control "public, max-age=3600"
         }
     }
 
-    /ping {
+    # lsh@2023-11-03: disabled to reduce Loggly spam. #8531
+    log {
+        output discard
+    }
+
+    handle /ping {
         # lsh@2023-11-03: disabled to reduce Loggly spam. #8531
-        log output "discard"
+
         header Cache-Control "must-revalidate, no-cache, no-store, private"
         header Content-Type "text/plain; charset=UTF-8"
         respond "pong" 200
     }
 
-    /ping-fastly {
-        # lsh@2023-11-03: disabled to reduce Loggly spam. #8531
-        log output "discard"
+    handle /ping-fastly {
         header Cache-Control "must-revalidate, no-cache, no-store, private"
         header Content-Type "text/plain; charset=UTF-8"
         respond "pong" 200
     }
 
-    # kong
-    reverse_proxy {
-        to http://localhost:8000
-        transport http {
-
-            # nginx:
-            # "When buffering is disabled, the response is passed to a client synchronously, immediately as it is received. 
-            # nginx will not try to read the whole response from the proxied server."
-            # - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering
-            # proxy_buffering off;
-            #
-            # caddy:
-            # "By default, the proxy partially buffers the response for wire efficiency."
-            # "flush_interval is a duration value that adjusts how often Caddy should flush the response buffer to the client.
-            # By default, no periodic flushing is done. A negative value (typically -1) suggests "low-latency mode" which 
-            # disables response buffering completely and flushes immediately after each write to the client, ..."
-            # there are caveats when this option is ignored however!
-            # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#streaming
-            # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#flush_interval
-            flush_interval -1
-
-            # - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#var_proxy_add_x_forwarded_for
-            # proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            #
-            # Caddy automatically sets the X-Forwarded-For header to prevent spoofing.
-            # however! we *expect* our CDN to set this header. We then want Caddy to pass it through unmodified.
-            # see: /etc/caddy/conf.d/trusted-proxy-ip-ranges
-            # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#defaults
-        }
-    }
-
-    (error-pages)
-
-    # "The log directive applies to the host/port of the site block it appears in, not any other part of the site address (e.g. path)."
     log {
         output file /var/log/caddy/access.log {
             # see /etc/logrotate.d/caddy
@@ -87,6 +56,38 @@
             time_format rfc3339
         }
     }
+
+    # kong
+    reverse_proxy {
+        to http://localhost:8000
+        transport http
+
+        # nginx:
+        # "When buffering is disabled, the response is passed to a client synchronously, immediately as it is received. 
+        # nginx will not try to read the whole response from the proxied server."
+        # - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering
+        # proxy_buffering off;
+        #
+        # caddy:
+        # "By default, the proxy partially buffers the response for wire efficiency."
+        # "flush_interval is a duration value that adjusts how often Caddy should flush the response buffer to the client.
+        # By default, no periodic flushing is done. A negative value (typically -1) suggests "low-latency mode" which 
+        # disables response buffering completely and flushes immediately after each write to the client, ..."
+        # there are caveats when this option is ignored however!
+        # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#streaming
+        # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#flush_interval
+        flush_interval -1
+
+        # - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#var_proxy_add_x_forwarded_for
+        # proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        #
+        # Caddy automatically sets the X-Forwarded-For header to prevent spoofing.
+        # however! we *expect* our CDN to set this header. We then want Caddy to pass it through unmodified.
+        # see: /etc/caddy/conf.d/trusted-proxy-ip-ranges
+        # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#defaults
+    }
+
+    import ../snippets/error-pages
 }
 
 {% set h1 = salt['elife.cfg']('project.project_hostname') %}{# bp.elifesciences.org -#}
