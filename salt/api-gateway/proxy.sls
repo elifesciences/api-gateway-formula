@@ -52,3 +52,12 @@ proxy:
             - service: nginx-server-service
 
 {% endif %}
+
+smoke-tests:
+    file.managed:
+        - user: {{ pillar.elife.deploy_user.username }}
+        - name: /home/{{ pillar.elife.deploy_user.username }}/smoke-tests.sh
+        - source: salt://api-gateway/config/home-deploy-user-smoke-tests.sh
+        - mode: 754
+        - require:
+            - proxy
