@@ -5,22 +5,24 @@
 
 (config) {
 
+    import ../snippets/error-pages
+
     # shortcuts to /documentations/
     # do not cache them for now, because:
     # - it's a mess to debug
     # - there is no Vary: Host so CDN may use them to
     #   answer to requests for another host
-    handle / {
+    handle {
+        redir / /documentation/ 301
         header Cache-Control "must-revalidate, no-cache, no-store, private"
-        redir /documentation/ 301
     }
 
-    handle /documentation {
+    handle {
+        redir /documentation /documentation/ 301
         header Cache-Control "must-revalidate, no-cache, no-store, private"
-        redir /documentation/ 301
     }
 
-    handle /documentation/ {
+    handle_path /documentation/* {
         header Cache-Control "public, max-age=3600"
         file_server {
             root /srv/api-raml/dist
@@ -86,8 +88,6 @@
         # see: /etc/caddy/conf.d/trusted-proxy-ip-ranges
         # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#defaults
     }
-
-    import ../snippets/error-pages
 }
 
 {% set h1 = salt['elife.cfg']('project.project_hostname') %}{# bp.elifesciences.org -#}
