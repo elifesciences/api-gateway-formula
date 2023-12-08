@@ -1,3 +1,8 @@
+elife:
+    webserver:
+        app:
+            caddy
+
 api_gateway:
 
     admin: http://localhost:8001
@@ -27,7 +32,7 @@ api_gateway:
         example:
             upstream_url: http://example.com
             uris: /example
-        
+
     # APIs that once existed but should not exist any longer
     absent_endpoints: 
         - not_there_anymore

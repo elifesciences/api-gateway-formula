@@ -217,7 +217,6 @@ add-api-endpoint-{{ name }}:
         - require:
             - service: kong-container-service
 {% endfor %}
-        
 
 
 #
