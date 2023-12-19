@@ -12,12 +12,12 @@
     # - it's a mess to debug
     # - there is no Vary: Host so CDN may use them to
     #   answer to requests for another host
-    handle {
+    handle / {
         redir / /documentation/ 301
         header Cache-Control "must-revalidate, no-cache, no-store, private"
     }
 
-    handle {
+    handle /documentation {
         redir /documentation /documentation/ 301
         header Cache-Control "must-revalidate, no-cache, no-store, private"
     }
