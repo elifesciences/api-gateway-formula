@@ -62,7 +62,15 @@
     # kong
     reverse_proxy {
         to http://localhost:8000
-        transport http
+        transport http {
+            # "the maximum duration to wait for reading response headers from the upstream. Default: No timeout."
+            # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#response_header_timeout
+            # the closest equivalent in nginx is `proxy_connect_timeout`:
+            # "Defines a timeout for establishing a connection with a proxied server. Default: 60s;"
+            # - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_connect_timeout
+            # lsh@2023-12-19: no timeout is unsafe and 60s is far too long. lets try 5s going forward.
+            response_header_timeout 5s
+        }
 
         # nginx:
         # "When buffering is disabled, the response is passed to a client synchronously, immediately as it is received. 
