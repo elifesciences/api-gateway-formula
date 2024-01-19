@@ -32,6 +32,8 @@ proxy:
         - template: jinja
         - require:
             - api-documentation
+        - require_in:
+            - caddy-validate-config
         - watch_in:
             - service: caddy-server-service
 

@@ -1,9 +1,15 @@
-
 (certs) {
     tls /etc/certificates/certificate.chained.crt /etc/certificates/privkey.pem
 }
 
 (config) {
+
+    log {
+        output file /var/log/caddy/access.log
+        format json {
+            time_format rfc3339
+        }
+    }
 
     import ../snippets/error-pages
 
@@ -30,71 +36,62 @@
         }
     }
 
-    # lsh@2023-11-03: disabled to reduce Loggly spam. #8531
-    log {
-        output discard
-    }
-
     handle /ping {
         # lsh@2023-11-03: disabled to reduce Loggly spam. #8531
-
+        skip_log
         header Cache-Control "must-revalidate, no-cache, no-store, private"
         header Content-Type "text/plain; charset=UTF-8"
         respond "pong" 200
     }
 
     handle /ping-fastly {
+        # lsh@2023-11-03: disabled to reduce Loggly spam. #8531
+        skip_log
         header Cache-Control "must-revalidate, no-cache, no-store, private"
         header Content-Type "text/plain; charset=UTF-8"
         respond "pong" 200
     }
 
-    log {
-        output file /var/log/caddy/access.log {
-            # see /etc/logrotate.d/caddy
-            roll_disabled
-        }
-        format json {
-            time_format rfc3339
-        }
-    }
-
     # kong
-    reverse_proxy {
-        to http://localhost:8000
-        transport http {
-            # "the maximum duration to wait for reading response headers from the upstream. Default: No timeout."
-            # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#response_header_timeout
-            # the closest equivalent in nginx is `proxy_connect_timeout`:
-            # "Defines a timeout for establishing a connection with a proxied server. Default: 60s;"
-            # - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_connect_timeout
-            # lsh@2023-12-19: no timeout is unsafe and 60s is far too long. lets try 5s going forward.
-            response_header_timeout 5s
+    handle {
+        skip_log /ping/*
+
+        reverse_proxy {
+            to http://localhost:8000
+            transport http {
+                # "the maximum duration to wait for reading response headers from the upstream. Default: No timeout."
+                # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#response_header_timeout
+                # the closest equivalent in nginx is `proxy_connect_timeout`:
+                # "Defines a timeout for establishing a connection with a proxied server. Default: 60s;"
+                # - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_connect_timeout
+                # lsh@2023-12-19: no timeout is unsafe and 60s is far too long. lets try 5s going forward.
+                response_header_timeout 5s
+            }
+
+            # nginx:
+            # "When buffering is disabled, the response is passed to a client synchronously, immediately as it is received. 
+            # nginx will not try to read the whole response from the proxied server."
+            # - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering
+            # proxy_buffering off;
+            #
+            # caddy:
+            # "By default, the proxy partially buffers the response for wire efficiency."
+            # "flush_interval is a duration value that adjusts how often Caddy should flush the response buffer to the client.
+            # By default, no periodic flushing is done. A negative value (typically -1) suggests "low-latency mode" which 
+            # disables response buffering completely and flushes immediately after each write to the client, ..."
+            # there are caveats when this option is ignored however!
+            # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#streaming
+            # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#flush_interval
+            flush_interval -1
+
+            # - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#var_proxy_add_x_forwarded_for
+            # proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            #
+            # Caddy automatically sets the X-Forwarded-For header to prevent spoofing.
+            # however! we *expect* our CDN to set this header. We then want Caddy to pass it through unmodified.
+            # see: /etc/caddy/conf.d/trusted-proxy-ip-ranges
+            # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#defaults
         }
-
-        # nginx:
-        # "When buffering is disabled, the response is passed to a client synchronously, immediately as it is received. 
-        # nginx will not try to read the whole response from the proxied server."
-        # - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering
-        # proxy_buffering off;
-        #
-        # caddy:
-        # "By default, the proxy partially buffers the response for wire efficiency."
-        # "flush_interval is a duration value that adjusts how often Caddy should flush the response buffer to the client.
-        # By default, no periodic flushing is done. A negative value (typically -1) suggests "low-latency mode" which 
-        # disables response buffering completely and flushes immediately after each write to the client, ..."
-        # there are caveats when this option is ignored however!
-        # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#streaming
-        # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#flush_interval
-        flush_interval -1
-
-        # - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#var_proxy_add_x_forwarded_for
-        # proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        #
-        # Caddy automatically sets the X-Forwarded-For header to prevent spoofing.
-        # however! we *expect* our CDN to set this header. We then want Caddy to pass it through unmodified.
-        # see: /etc/caddy/conf.d/trusted-proxy-ip-ranges
-        # - https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#defaults
     }
 }
 
