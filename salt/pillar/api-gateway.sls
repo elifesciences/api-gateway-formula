@@ -33,6 +33,10 @@ api_gateway:
             upstream_url: http://example.com
             uris: /example
 
+        example-with-regex:
+            upstream_url: http://example.com
+            uris: /example/\d+/sub/\d+
+
     # APIs that once existed but should not exist any longer
     absent_endpoints: 
         - not_there_anymore
