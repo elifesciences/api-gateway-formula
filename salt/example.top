@@ -2,7 +2,7 @@ base:
     '*':
         - elife
         - elife.docker-native
-        - elife.postgresql-12
+        - elife.postgresql-13
         #- elife.nginx
         - elife.disable-nginx
         - elife.caddy
